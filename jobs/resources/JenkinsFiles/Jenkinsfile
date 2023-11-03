@@ -1,0 +1,101 @@
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk17'
+        maven 'Maven'
+    }
+
+    options {
+        ansiColor('css')
+        buildDiscarder logRotator(daysToKeepStr: '5', numToKeepStr: '5')
+    }
+
+    stages {
+        stage('Initialise') {
+            steps {
+                cleanWs()
+                sh '../_PipelineCreationJob_/jobInit.sh'
+            }
+        }
+
+        stage('Code Checkout') {
+            steps {
+                checkout([
+                        $class           : 'GitSCM',
+                        branches         : [[name: "${GIT_BRANCH}"]],
+                        userRemoteConfigs: [[url: "${GIT_URL}"]]
+                ])
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh """
+          mvn clean package -DskipTests -Ddependency-check.skip=true
+          ../_PipelineCreationJob_/jobMake.sh
+        """
+            }
+        }
+
+        stage('Code CVE Analysis') {
+            when {
+                branch 'develop'
+            }
+            steps {
+              sh 'mvn dependency-check:check'
+            }
+
+            post {
+                always {
+                    dependencyCheckPublisher(stopBuild: false)
+                }
+            }
+        }
+
+        stage('Documentation (doxygen)') {
+            steps {
+                sh 'doxygen'
+                publishHTML(target: [
+                        allowMissing          : false,
+                        alwaysLinkToLastBuild : true,
+                        keepAll               : false,
+                        reportDir             : 'target/html',
+                        reportFiles           : 'index.html',
+                        reportName            : 'Doxygen Documentation',
+                        useWrapperFileDirectly: true,
+                        reportTitles          : ''
+                ])
+            }
+        }
+
+        stage(' Unit Testing') {
+            steps {
+                sh 'mvn test jacoco:report surefire-report:report -Ddependency-check.skip=true'
+            }
+        }
+
+        stage('Build Deploy Code (develop only)') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                sh '../_PipelineCreationJob_/jobDeploy.sh'
+            }
+        }
+    }
+
+    post {
+        always {
+            junit 'target/surefire-reports/**/*.xml'
+            jacoco(
+                    execPattern: 'target/*.exec',
+                    classPattern: 'target/classes',
+                    sourcePattern: 'src/main/java',
+                    exclusionPattern: 'src/test*'
+            )
+        }
+    }
+}
+
+

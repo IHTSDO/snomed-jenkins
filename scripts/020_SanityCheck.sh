@@ -66,9 +66,16 @@ gitLeaksCheck() {
 
 checkText() {
     TXT=$1
+    count=$(grep -R -n --exclude-dir=target "$TXT" ./* | grep -v SNOMED_SANITY_IGNORE | wc -l)
     echo "--------------------------------------------------------------------------------"
-    echo "Searching for : $TXT"
-    grep -R -n --exclude-dir=target "$TXT" ./* || true
+
+    if (( count > 0 )); then
+        echo "Searching for : $TXT - Found $count hits"
+        grep -R -n --exclude-dir=target "$TXT" ./* | grep -v SNOMED_SANITY_IGNORE
+        exit 1
+    else
+        echo "Search for : $TXT - None found"
+    fi
 }
 
 checkLicense
@@ -92,9 +99,9 @@ esac
 figlet -w 500 "DevOps Checks"
 gitLeaksCheck
 
-checkText "ihtsdotools.org"
-checkText "snomedtools.org"
-checkText "sct2"
-checkText "der2"
+checkText "ihtsdotools.org"      # SNOMED_SANITY_IGNORE
+checkText "snomedtools.org"      # SNOMED_SANITY_IGNORE
+checkText "sct2"                 # SNOMED_SANITY_IGNORE
+checkText "der2"                 # SNOMED_SANITY_IGNORE
 
 echo "Completed OK"

@@ -3,7 +3,6 @@
 This project contains all code for the Jenkins build pipelines for Snomed CT, with the following exception:
 
 The builds are controlled by **pipelines**:
-* their code is here: https://dev-jenkins.ihtsdotools.org/manage/configfiles/
 * The main build pipeline is SnomedPipeline_Maven_jdk17 which sets up maven/gradle and Java17.
 * The other pipeline is for Cypress builds, this is likely to change.
 
@@ -15,9 +14,7 @@ All of this is documented below.
 
 # Primary spreadsheet
 
-The primary spreadsheet controls, which jobs are built and how. It is located here:
-
-* https://docs.google.com/spreadsheets/d/13Hdd_hf1HbUAUVbMbzZgQPQIkQ_gI8rGZ9IS3WvK5iM
+The primary spreadsheet controls, which jobs are built and how.  Ask Jim/Darryn etc for access to the spreadsheet.
 
 # Jobs
 
@@ -113,15 +110,15 @@ The following is a list of the plugins we use in our Jenkins instance.
 
 ## Jenkins Configuration
 
-* Added environment variable to Jenkins, here: https://dev-jenkins.ihtsdotools.org/manage/configure
+* Added environment variable to Jenkins: https://<JENKINS_URL>/manage/configure
 
 ```properties
-SNOMED_SPREADSHEET_URL = https://docs.google.com/spreadsheets/d/13Hdd_hf1HbUAUVbMbzZgQPQIkQ_gI8rGZ9IS3WvK5iM
+SNOMED_SPREADSHEET_URL = <URL_TO_SPREADSHEET>
 ```
 
 ## Credentials:
 
-* These are all setup here: https://dev-jenkins.ihtsdotools.org/manage/credentials/
+* These are all setup here: https://<JENKINS_URL>/manage/credentials/
 * You can see in the pipelines how these are passed.....
 
 ## Linux box libraries installed:
