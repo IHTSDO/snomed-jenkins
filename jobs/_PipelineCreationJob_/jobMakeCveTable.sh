@@ -6,11 +6,9 @@ CVE_URL=https://ossindex.sonatype.org/vulnerability
 BUILD_URL=$JENKINS_URL/job/nightly/job
 JIRA_URL=https://jira.ihtsdotools.org/browse/
 URL_BASE=https://jira.ihtsdotools.org/rest/api/2
-PROJECT=PIP
 
 findCveTickets() {
     local cve=$1
-#  "jql": "project = ${PROJECT} and labels = cve and summary ~ ${cve}"
     read -r -d '' jsonData << EOF
 {
   "jql": "summary~\"${cve}\" or text~\"${cve}\""
@@ -300,11 +298,17 @@ writeToHtml() {
     writeHtmlTrailer
 }
 
-declare -A cves
-scanForCves
+if [[ $1 == tsv ]]; then
+    declare -A cves
+    scanForCves
 
-echo "Writing to $CVE_TSV_FILE"
-writeToTsv > "$CVE_TSV_FILE"
+    echo "Writing to $CVE_TSV_FILE"
+    writeToTsv > "$CVE_TSV_FILE"
 
-echo "Writing to $CVE_HTML_FILE"
-writeToHtml > "$CVE_HTML_FILE"
+elif [[ $1 == html ]]; then
+    echo "Writing to $CVE_HTML_FILE"
+    writeToHtml > "$CVE_HTML_FILE"
+
+else
+    echo "Specify tsv or html."
+fi
