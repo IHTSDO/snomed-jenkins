@@ -19,7 +19,7 @@ if [[ -e $SPREADSHEET_FILE_NAME ]]; then
 fi
 
 if [[ ! -e $SPREADSHEET_FILE_NAME ]]; then
-    echo "Downloading estate spreadsheet from: ${SPREADSHEET_URL_SHORT}"
+    echo "Downloading estate spreadsheet from: ${SNOMED_SPREADSHEET_URL}"
     curl --silent --output "${SPREADSHEET_FILE_NAME}" "${SPREADSHEET}" || true
     attemptNumber=0
 
@@ -54,3 +54,4 @@ export SNOMED_PROJECT_NOTES=$(fixStr "${LINEARR[11]}")
 
 export SNOMED_PROJECT_NAME_ARRAY=( ${SNOMED_PROJECT_NAME//-/ } )
 export SNOMED_PROJECT_NICE_NAME="${SNOMED_PROJECT_NAME_ARRAY[@]^}"
+

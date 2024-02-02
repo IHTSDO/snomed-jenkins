@@ -4,7 +4,7 @@ figlet -w 500 "${STAGE_NAME}"
 
 # TODO: https://github.com/docker/docker-credential-helpers#available-programs
 deployToDockerHub() {
-    if [[ $GIT_BRANCH =~ master$ ]] || [[ $GIT_BRANCH =~ main$ ]]; then
+    if [[ $GIT_BRANCH == "master" ]] || [[ $GIT_BRANCH == "main" ]]; then
         containsJib=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="build"]/*[local-name()="plugins"]/*[local-name()="plugin"]/*[local-name()="artifactId"]' pom.xml | grep -c jib-maven-plugin)
 
         if (( containsJib == 1 )); then
@@ -21,14 +21,14 @@ deployDebianPackages() {
     echo "Uploading to Nexus"
     local rel_type="NONE"
 
-    if [[ $GIT_BRANCH =~ master$ ]]; then
+    if [[ $GIT_BRANCH == "master" ]] || [[ $GIT_BRANCH == "main" ]]; then
         rel_type="debian-releases"
-    elif [[ $GIT_BRANCH =~ main$ ]]; then
-        rel_type="debian-releases"
-    elif [[ $GIT_BRANCH =~ develop$ ]]; then
+    elif [[ $GIT_BRANCH == "develop" ]] || [[ $GIT_BRANCH =~ nexus$ ]]; then
         rel_type="debian-snapshots"
     else
-        echo "Not main/master or develop branch, not uploading to Nexus"
+        echo "NOT uploading to Nexus:"
+        echo "    'main/master' branch is uploaded to Nexus in 'debian-releases'"
+        echo "    'develop' and branches ending in 'nexus' are uploaded to Nexus in 'debian-snapshots'"
     fi
 
     if [[ $rel_type =~ debian* ]]; then
