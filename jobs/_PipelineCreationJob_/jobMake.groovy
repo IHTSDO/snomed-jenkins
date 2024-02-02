@@ -1,6 +1,7 @@
 @Grab('com.xlson.groovycsv:groovycsv:1.3')
 import com.xlson.groovycsv.CsvParser
 import jenkins.model.Jenkins
+import java.security.MessageDigest
 
 def envVars = Jenkins.instance.getGlobalNodeProperties()[0].getEnvVars()
 
@@ -26,6 +27,7 @@ COLUMN_NOTES = "Notes"
 
 NIGHTLY_TRIGGER='H H(4-7) * * *'
 NUMBER_OF_JOBS_TO_KEEP = 5
+NUMBER_OF_DAYS_TO_KEEP = 5
 NUMBER_OF_NIGHTLY_JOBS_TO_KEEP = 5
 BANNER_MESSAGE = "Automated build pipeline job, if you edit this pipeline your changes will be lost on next system startup."
 
@@ -142,7 +144,7 @@ String convertToEmails(String projectNotifiedUsers) {
 void makeMainPipelineJob(def projectName, def row) {
     String projectGroupArtifact = row."${COLUMN_GROUP_ARTIFACT}"
     String projectBuildTool = row."${COLUMN_BUILD_TOOL}".toLowerCase().capitalize()
-    String projectLanguage = row."${COLUMN_LANGUAGE}"
+    String projectLanguage = row."${COLUMN_LANGUAGE}".toLowerCase().capitalize()
     String projectPipeLineType = "${projectBuildTool}_${projectLanguage}"
     String projectType = row."${COLUMN_PROJECT_TYPE}".toLowerCase()
     String projectSlackChannel = row."${COLUMN_SLACK_CHANNEL}".toLowerCase()
@@ -155,6 +157,8 @@ void makeMainPipelineJob(def projectName, def row) {
     String projectGitUri = "git@github.com:IHTSDO/${projectName}.git"
     String projectNexusUrl = "https://nexus3.ihtsdotools.org/#browse/browse:debian-snapshots:packages%2Fs%2F${projectGroupArtifact}"
     String cveTableUrl = "/userContent/cveTable.html"
+    // This needs to be constant so cannot be a UUID!
+    String nameMd5Token = MessageDigest.getInstance("SHA256").digest(projectName.bytes).encodeHex().toString()
 
     println "Creating build pipeline : ${projectName} [ ${projectPipeLineType} ]"
 
@@ -186,6 +190,7 @@ void makeMainPipelineJob(def projectName, def row) {
 
     def projectNameWithFolderNightly = 'nightly/' + projectName
 
+    // https://jenkinsci.github.io/job-dsl-plugin/#path/multibranchPipelineJob
     multibranchPipelineJob(projectNameWithFolder) {
         displayName("${projectName}")
 
@@ -196,18 +201,17 @@ void makeMainPipelineJob(def projectName, def row) {
             git {
                 id(projectName)
                 remote(projectGitUri)
-                // TODO: All branches.
-//                includes("main master develop release-candidate")
-                includes("main develop")
+                includes("")
                 excludes("")
             }
         }
 
-        orphanedItemStrategy {
-            discardOldItems {
-                numToKeep(NUMBER_OF_JOBS_TO_KEEP)
-            }
-        }
+         orphanedItemStrategy {
+             discardOldItems {
+                // What to do with old branches?  Commenting this out means "delete them"
+                // daysToKeep(NUMBER_OF_DAYS_TO_KEEP)
+             }
+         }
 
         factory {
             pipelineBranchDefaultsProjectFactory {
@@ -220,6 +224,22 @@ void makeMainPipelineJob(def projectName, def row) {
                 useSandbox(true)
             }
         }
+
+        // There is no DSL API hook for the https://plugins.jenkins.io/multibranch-scan-webhook-trigger/
+        // so we need to use the XML configure hook to configure.
+        // https://jenkinsci.github.io/job-dsl-plugin/#path/multibranchPipelineJob-configure
+        // From this tutorial: https://medium.com/@maksymgrebenets/jenkins-job-dsl-configure-block-4a51aa891f7
+        configure { node ->
+            node / 'triggers' << 'com.igalg.jenkins.plugins.mswt.trigger.ComputedFolderWebHookTrigger' {
+                spec ''
+                token nameMd5Token
+            }
+        }
+    }
+
+    if (!projectLanguage.toLowerCase().startsWith("jdk")) {
+        println "    Skipping nightly for : ${projectName} [ ${projectPipeLineType} ]"
+        return
     }
 
     freeStyleJob(projectNameWithFolderNightly) {

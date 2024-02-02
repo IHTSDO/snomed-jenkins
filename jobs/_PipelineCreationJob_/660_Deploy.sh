@@ -65,20 +65,27 @@ deployDebianPackages() {
 
 echo "--------------------------------------"
 
-case $SNOMED_PROJECT_BUILD_TOOL in
-    maven)
+case $SNOMED_PROJECT_LANGUAGE in
+    Cypress|Typescript|Javascript)
         deployDebianPackages
         ;;
-    gradle)
-        ./gradlew uploadArchives
-        ;;
-    none)
-        echo "No build tool required."
-        ;;
     *)
-        echo "Unknown build tool: ${SNOMED_PROJECT_BUILD_TOOL}"
-        exit 1
-        ;;
+        case $SNOMED_PROJECT_BUILD_TOOL in
+            maven)
+                deployDebianPackages
+                ;;
+            gradle)
+                ./gradlew uploadArchives
+                ;;
+            none)
+                echo "No deploy tool required."
+                ;;
+            *)
+                echo "Unknown build tool: ${SNOMED_PROJECT_BUILD_TOOL}"
+                exit 1
+                ;;
+        esac
+    ;;
 esac
 
 echo "--------------------------------------"

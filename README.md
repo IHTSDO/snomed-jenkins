@@ -28,15 +28,28 @@ The two jobs are:
 (Note the job names start with an underscore, this allows for easy identification and auto-management.)
 
 ## \_DailyAnalysis\_ job
-This runs the following scripts, every morning:
-* `jobMakeCveTable.sh`
-* `jobMakeDependencyGraph.sh`
-* `createCveJiraTickets.sh`
+This runs the following, every morning:
+
+```shell
+# Search for CVE's in project reports and generate tsv file.
+../_PipelineCreationJob_/jobMakeCveTable.sh tsv
+
+# Analyse project pom.xml files and generate PNG and SVG images.
+../_PipelineCreationJob_/jobMakeDependencyGraph.sh
+
+# Create new Jira tickets if required.
+../_PipelineCreationJob_/createCveJiraTickets.sh
+
+# Use TSV file and existing Jira tickets to create HTML report.
+../_PipelineCreationJob_/jobMakeCveTable.sh html
+```
 
 ## \_PipelineCreationJob\_ job
 This runs:
-* `jobMake.groovy`
-* `approveAllScripts.groovy`
+```shell
+jobMake.groovy
+approveAllScripts.groovy
+```
 
 # Pipelines.
 
@@ -96,6 +109,7 @@ The following is a list of the plugins we use in our Jenkins instance.
 * OWASP Dependency-Check
 * Pipeline
 * Dashboard ViewVersion
+* Multibranch Scan Webhook Trigger
 
 ## Jenkins Configuration
 

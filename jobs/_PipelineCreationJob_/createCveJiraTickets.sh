@@ -2,6 +2,7 @@
 LOC=$JENKINS_HOME/userContent
 CVE_TSV_FILE=$LOC/cveTable.tsv
 URL_BASE=https://jira.ihtsdotools.org/rest/api/2
+CVE_URL=https://ossindex.sonatype.org/vulnerability
 PROJECT=PIP
 
 findCveTicket() {
@@ -21,7 +22,8 @@ createNewTicket() {
     local cve=$2
     local list=$3
     local summary="CVE: Address ${cve} (${score})"
-    local description="Automatically created CVE ticket: Mitigate CVE ${cve} (${score})\nSystems affected: ${list}"
+    local listFmt=$(echo "$list" | sed 's/,/|\r\n|/g')
+    local description="Automatically created CVE ticket:\nMitigate CVE: [${cve}|${CVE_URL}/${cve}]\nSystems affected:\n||System||\n|${listFmt}|\n"
     local issueType="Improvement"
     local label="cve"
     local bigger9=$(echo "$score >= 9.0" | bc)

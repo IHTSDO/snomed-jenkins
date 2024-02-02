@@ -2,19 +2,32 @@
 source ../_PipelineCreationJob_/000_Config.sh
 figlet -w 500 "${STAGE_NAME}"
 
-case $SNOMED_PROJECT_BUILD_TOOL in
-    maven)
-        mvn test surefire-report:report -Ddependency-check.skip=true
+case $SNOMED_PROJECT_LANGUAGE in
+    Cypress)
+        echo "No test tool required."
         ;;
-    gradle)
-        ./gradlew test
+    Javascript)
+        echo "No test tool required at the moment."
         ;;
-    none)
-        echo "No build tool required."
+    Typescript)
+        echo "No test tool required at the moment."
+        # ng test
         ;;
     *)
-        echo "Unknown build tool: ${SNOMED_PROJECT_BUILD_TOOL}"
-        exit 1
-        ;;
+        case $SNOMED_PROJECT_BUILD_TOOL in
+            maven)
+                mvn test surefire-report:report -Ddependency-check.skip=true
+                ;;
+            gradle)
+                ./gradlew test
+                ;;
+            none)
+                echo "No test tool required."
+                ;;
+            *)
+                echo "Unknown build tool: ${SNOMED_PROJECT_BUILD_TOOL}"
+                exit 1
+                ;;
+        esac
+    ;;
 esac
-

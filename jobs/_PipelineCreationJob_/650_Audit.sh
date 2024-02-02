@@ -14,7 +14,7 @@ case $SNOMED_PROJECT_BUILD_TOOL in
         echo "SonarQube not implemented for gradle."
         ;;
     none)
-        echo "No build tool required."
+        echo "No audit tool required."
         ;;
     *)
         echo "Unknown build tool: ${SNOMED_PROJECT_BUILD_TOOL}"
