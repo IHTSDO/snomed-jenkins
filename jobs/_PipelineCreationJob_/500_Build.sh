@@ -3,7 +3,7 @@ source ../_PipelineCreationJob_/000_Config.sh
 figlet -w 500 "${STAGE_NAME}"
 
 case $SNOMED_PROJECT_LANGUAGE in
-    Cypress|Typescript)
+    Cypress)
         npm install
         ng build
         ;;
