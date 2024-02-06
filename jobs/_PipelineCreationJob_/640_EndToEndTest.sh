@@ -2,25 +2,34 @@
 source ../_PipelineCreationJob_/000_Config.sh
 figlet -w 500 "${STAGE_NAME}"
 
-if [[ $SNOMED_PROJECT_LANGUAGE == "Cypress" ]]; then
+if [[ -d cypress ]]; then
     # Make a config file for Cypress.
     JSON_FILE="cypress.env.json"
 
     {
         echo "{"
-        first=true
 
         while read -r key value; do
-            if $first; then
-                first=false
-            else
-                echo ","
-            fi
+            echo "    \"$key\": \"$value\","
+        done <<< "$(set | grep "^TEST_" | sed -e 's/=/\t/' -e "s/\t'/\t/" -e "s/'$//" | cut -f 1,2)"
 
-            echo -n "    \"$key\": \"$value\""
-        done<<<"$(set | grep "^TEST_" | sed -e 's/=/\t/' -e "s/\t'/\t/" -e "s/'$//" | cut -f 1,2)"
+        case $GIT_BRANCH in
+            main | master)
+                echo "    \"URL_BROWSER\": \"https://uat-browser.ihtsdotools.org\","
+                echo "    \"URL_AUTHORING\": \"https://uat-authoring.ihtsdotools.org\","
+                echo "    \"URL_REPORTING\": \"https://uat-snowstorm.ihtsdotools.org/reporting/\","
+                echo "    \"URL_RAD\": \"https://uat-release.ihtsdotools.org/\","
+                echo "    \"URL_SIMPLEX\": \"https://uat-simplex.ihtsdotools.org/\""
+                ;;
+            *)
+                echo "    \"URL_BROWSER\": \"https://dev-browser.ihtsdotools.org\","
+                echo "    \"URL_AUTHORING\": \"https://dev-authoring.ihtsdotools.org\","
+                echo "    \"URL_REPORTING\": \"https://dev-snowstorm.ihtsdotools.org/reporting/\","
+                echo "    \"URL_RAD\": \"https://dev-release.ihtsdotools.org/\","
+                echo "    \"URL_SIMPLEX\": \"https://dev-simplex.ihtsdotools.org/\""
+                ;;
+        esac
 
-        echo
         echo "}"
     } > "$JSON_FILE"
 
