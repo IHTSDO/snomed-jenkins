@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source ../_PipelineCreationJob_/000_Config.sh
+source ../_PipelineCreationJob_/jobs/_PipelineCreationJob_/000_Config.sh
 figlet -w 500 "${STAGE_NAME}"
 
 # TODO: Performance, K6.

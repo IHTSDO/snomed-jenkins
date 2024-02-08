@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source ../_PipelineCreationJob_/000_Config.sh > /dev/null 2>&1
+source ../_PipelineCreationJob_/jobs/_PipelineCreationJob_/000_Config.sh > /dev/null 2>&1
 
 EMAIL_POSTFIX="@snomed.org"
 EMAIL_DELIMITER=","

@@ -8,6 +8,7 @@ def envVars = Jenkins.instance.getGlobalNodeProperties()[0].getEnvVars()
 BASEFOLDER = "/tmp/"
 SPREADSHEET_FILE_NAME = "${BASEFOLDER}ProjectsDSL.csv"
 SPREADSHEET_URL=envVars["SNOMED_SPREADSHEET_URL"]
+GIT_WEB_HOOK_CREATE_TOKEN = new File('workspace/_PipelineCreationJob_/hook.txt').text
 SPREADSHEET = "${SPREADSHEET_URL}/gviz/tq?tqx=out:csv"
 DOWNLOAD = true
 
@@ -161,6 +162,13 @@ void makeMainPipelineJob(def projectName, def row) {
     String nameMd5Token = MessageDigest.getInstance("SHA256").digest(projectName.bytes).encodeHex().toString()
 
     println "Creating build pipeline : ${projectName} [ ${projectPipeLineType} ]"
+
+    // Make the webhook in github, if its missing.
+    def sout = new StringBuilder(), serr = new StringBuilder()
+    def proc = "./workspace/_PipelineCreationJob_/jobs/_PipelineCreationJob_/jobMakeCreateGithubWebHook.sh ${GIT_WEB_HOOK_CREATE_TOKEN} ${projectName} ${nameMd5Token}".execute()
+    proc.consumeProcessOutput(sout, serr)
+    proc.waitForOrKill(1000)
+    println "hook output> $sout\nhook error> $serr\nCompleted call to github hook API"
 
     folder('jobs') {
         displayName('Normal builds of ALL branches')
