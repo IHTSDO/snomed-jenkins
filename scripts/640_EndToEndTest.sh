@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-source ../_PipelineCreationJob_/jobs/_PipelineCreationJob_/000_Config.sh
-figlet -w 500 "${STAGE_NAME}"
+source "$SCRIPTS_PATH/000_Config.sh"
+figlet -w 500 "E2E Tests"
 
 if [[ -d cypress ]]; then
     # Make a config file for Cypress.
@@ -15,6 +15,7 @@ if [[ -d cypress ]]; then
 
         case $GIT_BRANCH in
             main | master)
+                echo "    \"URL_LOGIN\": \"https://uat-ims.ihtsdotools.org/#/login?serviceReferer=\","
                 echo "    \"URL_BROWSER\": \"https://uat-browser.ihtsdotools.org\","
                 echo "    \"URL_AUTHORING\": \"https://uat-authoring.ihtsdotools.org\","
                 echo "    \"URL_REPORTING\": \"https://uat-snowstorm.ihtsdotools.org/reporting/\","
@@ -22,6 +23,7 @@ if [[ -d cypress ]]; then
                 echo "    \"URL_SIMPLEX\": \"https://uat-simplex.ihtsdotools.org/\""
                 ;;
             *)
+                echo "    \"URL_LOGIN\": \"https://dev-ims.ihtsdotools.org/#/login?serviceReferer=\","
                 echo "    \"URL_BROWSER\": \"https://dev-browser.ihtsdotools.org\","
                 echo "    \"URL_AUTHORING\": \"https://dev-authoring.ihtsdotools.org\","
                 echo "    \"URL_REPORTING\": \"https://dev-snowstorm.ihtsdotools.org/reporting/\","

@@ -36,7 +36,7 @@ fi
 
 IFS="/" read -r -a JOBARR <<< "$JOB_NAME"
 PROJNAME=${JOBARR[1]}
-line=$(grep "^\"TRUE\",\"$PROJNAME\"" /tmp/ProjectsDSL.csv | head -1)
+line=$(grep -i "^\"TRUE\",\"$PROJNAME\"" /tmp/ProjectsDSL.csv | head -1)
 IFS="," read -r -a LINEARR <<< "$line"
 
 export SNOMED_PROJECT_ACTIVE=$(fixStr "${LINEARR[0]}")
@@ -45,13 +45,13 @@ export SNOMED_PROJECT_GROUP_ARTIFACT=$(fixStr "${LINEARR[2]}")
 export SNOMED_PROJECT_BUILD_TOOL=$(fixStr "${LINEARR[3]}")
 export SNOMED_PROJECT_LANGUAGE=$(fixStr "${LINEARR[4]}")
 export SNOMED_PROJECT_TYPE=$(fixStr "${LINEARR[5]}")
-export SNOMED_PROJECT_SLACK_CHANNEL=$(fixStr "${LINEARR[6]}")
-export SNOMED_PROJECT_NOTIFIED_USERS=$(fixStr "${LINEARR[7]}")
-export SNOMED_PROJECT_USES_BOM=$(fixStr "${LINEARR[8]}")
-export SNOMED_PROJECT_DEPENDENCIES=$(fixStr "${LINEARR[9]}")
-export SNOMED_PROJECT_OWNER=$(fixStr "${LINEARR[10]}")
-export SNOMED_PROJECT_NOTES=$(fixStr "${LINEARR[11]}")
+export SNOMED_PROJECT_DEPLOY_ENABLED=$(fixStr "${LINEARR[6]}")
+export SNOMED_PROJECT_SLACK_CHANNEL=$(fixStr "${LINEARR[7]}")
+export SNOMED_PROJECT_NOTIFIED_USERS=$(fixStr "${LINEARR[8]}")
+export SNOMED_PROJECT_USES_BOM=$(fixStr "${LINEARR[9]}")
+export SNOMED_PROJECT_DEPENDENCIES=$(fixStr "${LINEARR[10]}")
+export SNOMED_PROJECT_OWNER=$(fixStr "${LINEARR[11]}")
+export SNOMED_PROJECT_NOTES=$(fixStr "${LINEARR[12]}")
 
 export SNOMED_PROJECT_NAME_ARRAY=( ${SNOMED_PROJECT_NAME//-/ } )
 export SNOMED_PROJECT_NICE_NAME="${SNOMED_PROJECT_NAME_ARRAY[@]^}"
-

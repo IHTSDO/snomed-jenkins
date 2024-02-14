@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-source ../_PipelineCreationJob_/jobs/_PipelineCreationJob_/000_Config.sh
-figlet -w 500 "${STAGE_NAME}"
+source "$SCRIPTS_PATH/000_Config.sh"
+figlet -w 500 "Initialise"
 
 echo "---------------------------------------------------------------"
 java --version

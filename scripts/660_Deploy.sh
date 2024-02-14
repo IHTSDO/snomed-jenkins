@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-source ../_PipelineCreationJob_/jobs/_PipelineCreationJob_/000_Config.sh
-figlet -w 500 "${STAGE_NAME}"
+source "$SCRIPTS_PATH/000_Config.sh"
+figlet -w 500 "Deploy to Nexus"
 
 # TODO: https://github.com/docker/docker-credential-helpers#available-programs
 deployToDockerHub() {
@@ -65,27 +65,31 @@ deployDebianPackages() {
 
 echo "--------------------------------------"
 
-case $SNOMED_PROJECT_LANGUAGE in
-    Cypress|Typescript|Javascript)
-        deployDebianPackages
+if [[ $SNOMED_PROJECT_DEPLOY_ENABLED == TRUE ]]; then
+    case $SNOMED_PROJECT_LANGUAGE in
+        Cypress|Typescript|Javascript)
+            deployDebianPackages
+            ;;
+        *)
+            case $SNOMED_PROJECT_BUILD_TOOL in
+                maven)
+                    deployDebianPackages
+                    ;;
+                gradle)
+                    ./gradlew uploadArchives
+                    ;;
+                none)
+                    echo "No deploy tool required."
+                    ;;
+                *)
+                    echo "Unknown build tool: ${SNOMED_PROJECT_BUILD_TOOL}"
+                    exit 1
+                    ;;
+            esac
         ;;
-    *)
-        case $SNOMED_PROJECT_BUILD_TOOL in
-            maven)
-                deployDebianPackages
-                ;;
-            gradle)
-                ./gradlew uploadArchives
-                ;;
-            none)
-                echo "No deploy tool required."
-                ;;
-            *)
-                echo "Unknown build tool: ${SNOMED_PROJECT_BUILD_TOOL}"
-                exit 1
-                ;;
-        esac
-    ;;
-esac
+    esac
+else
+    echo Deployment disabled for the project.
+fi
 
 echo "--------------------------------------"

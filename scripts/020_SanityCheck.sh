@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-source ../_PipelineCreationJob_/jobs/_PipelineCreationJob_/000_Config.sh
-figlet -w 500 "${STAGE_NAME}"
+source "$SCRIPTS_PATH/000_Config.sh"
+figlet -w 500 "Sanity Check Project"
 
 mavenSanity() {
     if [[ -e pom.xml ]]; then
@@ -10,7 +10,7 @@ mavenSanity() {
 
         while read -r pomfile; do
             echo "$pomfile"
-            sed -i '/<plugins>/r /var/lib/jenkins/snomed-jenkins/jobs/resources/JaCoCo/jacoco.xml' "$pomfile"
+            sed -i '/<plugins>/r /var/lib/jenkins/workspace/_PipelineCreationJob_/resources/JaCoCo/jacoco.xml' "$pomfile"
         done<<<"$(find . -type f -name pom.xml)"
     else
         echo "Missing pom.xml"
