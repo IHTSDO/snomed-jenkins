@@ -29,7 +29,7 @@ COLUMN_NOTES = "Notes"
 GIT_HUB_CREDENTIALS_ID = '375fc783-9b0d-48be-a251-af24d82922bb'
 NIGHTLY_TRIGGER_SECURITY = 'H H(4-6) * * *'
 NIGHTLY_TRIGGER_E2E = 'H H(7-8) * * *'
-//NUMBER_OF_JOBS_TO_KEEP = 5
+NUMBER_OF_JOBS_TO_KEEP = 5
 //NUMBER_OF_DAYS_TO_KEEP = 5
 NUMBER_OF_NIGHTLY_JOBS_TO_KEEP = 5
 BANNER_MESSAGE = "Automated build pipeline job, if you edit this pipeline your changes will be lost on next system startup."
@@ -95,9 +95,9 @@ private void downloadSpreadsheet(File spreadsheet) {
 }
 
 GString generateDescription(String projectName, String projectSrcUrl, String projectNexusUrl, String projectGroupArtifact,
-                           String projectBuildTool, String projectLanguage, String projectType, String projectSlackChannel,
-                           String projectNotifiedUsers, Boolean projectUsesBom, String projectDependencies, String projectOwner, String projectNotes,
-                           String cveTableUrl) {
+                            String projectBuildTool, String projectLanguage, String projectType, String projectSlackChannel,
+                            String projectNotifiedUsers, Boolean projectUsesBom, String projectDependencies, String projectOwner, String projectNotes,
+                            String cveTableUrl) {
     return """
 <div style="border-radius:25px;border:5px solid gray;padding:10px;background:#07AAE0;">
     <font style="color:white;font-size:30px;">${BANNER_MESSAGE}</font><br/>
@@ -214,10 +214,8 @@ void makeMainPipelineJob(def projectName, def row) {
     // https://jenkinsci.github.io/job-dsl-plugin/#path/multibranchPipelineJob
     multibranchPipelineJob('jobs/' + projectName) {
         displayName("${projectName}")
-
         description(generateDescription(projectName, projectSrcUrl, projectNexusUrl, projectGroupArtifact, projectBuildTool, projectLanguage,
                 projectType, projectSlackChannel, projectNotifiedUsers, projectUsesBom, projectDependencies, projectOwner, projectNotes, cveTableUrl))
-
         branchSources {
             git {
                 id(projectName)
@@ -238,9 +236,9 @@ void makeMainPipelineJob(def projectName, def row) {
             pipelineBranchDefaultsProjectFactory {
                 // TODO: JCO: test to see if same pipeline can be used for gradle and maven.
                 if (projectBuildTool == 'Gradle') {
-                    scriptId('SnomedPipeline_' + "Maven_${projectLanguage}")
+                    scriptId("SnomedPipeline_Maven_${projectLanguage}")
                 } else {
-                    scriptId('SnomedPipeline_' + projectPipeLineType)
+                    scriptId("SnomedPipeline_${projectPipeLineType}")
                 }
                 useSandbox(true)
             }
@@ -262,73 +260,32 @@ void makeMainPipelineJob(def projectName, def row) {
     if (!projectLanguage.toLowerCase().startsWith("jdk")) {
         println "    Skipping security nightly for : ${projectName} [ ${projectPipeLineType} ]"
     } else {
-        // https://jenkinsci.github.io/job-dsl-plugin/#path/freeStyleJob
-        freeStyleJob('nightly_security/' + projectName) {
+        multibranchPipelineJob('nightly_security/' + projectName) {
             displayName("${projectName}_Security")
-
             description(generateDescription(projectName, projectSrcUrl, projectNexusUrl, projectGroupArtifact, projectBuildTool, projectLanguage,
                     projectType, projectSlackChannel, projectNotifiedUsers, projectUsesBom, projectDependencies, projectOwner, projectNotes, cveTableUrl))
-
-            jdk('jdk17')
-
-            scm {
+            branchSources {
                 git {
-                    remote {
-                        github("IHTSDO/${projectName}", 'ssh')
-                        credentials(GIT_HUB_CREDENTIALS_ID)
-                    }
-                    branch('develop')
+                    id(projectName)
+                    remote(projectGitUri)
+                    includes("develop")
+                    excludes("")
                 }
             }
-            
+
+            orphanedItemStrategy {discardOldItems {} }
             triggers { cron(NIGHTLY_TRIGGER_SECURITY) }
-            logRotator(-1, NUMBER_OF_NIGHTLY_JOBS_TO_KEEP)
-            wrappers { ansiColorBuildWrapper { colorMapName('xterm') } }
 
-            steps {
-                shell {
-                    // Maven returns 1 on build failure, interpret this as unstable, which means the report is ALWAYS generated/published.
-                    command("""$SCRIPTS_PATH/010_Initialize.sh
-$SCRIPTS_PATH/020_SanityCheck.sh
-$SCRIPTS_PATH/600_Security.sh""")
-                    unstableReturn(1)
-                }
-            }
-
-            publishers {
-                dependencyCheck('**/target/dependency-check-report.xml')
-
-                htmlPublisher {
-                    reportTargets {
-                        htmlPublisherTarget {
-                            reportName('CVE-Dependency Check Report Details')
-                            reportDir('.')
-                            reportFiles('**/target/dependency-check-report.html')
-                            keepAll(false)
-                            alwaysLinkToLastBuild(false)
-                            allowMissing(true)
-                        }
+            factory {
+                pipelineBranchDefaultsProjectFactory {
+                    // TODO: JCO: test to see if same pipeline can be used for gradle and maven.
+                    if (projectBuildTool == 'Gradle') {
+                        scriptId("SnomedPipeline_Maven_${projectLanguage}_CVE")
+                    } else {
+                        scriptId("SnomedPipeline_${projectPipeLineType}_CVE")
                     }
+                    useSandbox(true)
                 }
-
-                slackNotifier {
-                    commitInfoChoice('NONE')
-                    customMessage("Security CVE test")
-                    includeCustomMessage(true)
-                    notifyAborted(true)
-                    notifyBackToNormal(true)
-                    notifyEveryFailure(true)
-                    notifyNotBuilt(true)
-                    notifyRegression(true)
-                    notifySuccess(true)
-                    notifyUnstable(true)
-                    room(projectSlackChannel)
-                    sendAsText(true)
-                    includeFailedTests(false)
-                    includeTestSummary(false)
-                }
-
-                mailer(convertToEmails(projectNotifiedUsers), true, true)
             }
         }
     }
@@ -337,78 +294,34 @@ $SCRIPTS_PATH/600_Security.sh""")
     if (!projectLanguage.toLowerCase().startsWith("typescript")) {
         println "    Skipping E2E nightly for : ${projectName} [ ${projectPipeLineType} ]"
     } else {
-        // https://jenkinsci.github.io/job-dsl-plugin/#path/freeStyleJob
-        freeStyleJob('nightly_e2e/' + projectName) {
-            displayName("${projectName}_E2E")
-
+        // https://jenkinsci.github.io/job-dsl-plugin/#path/pipelineJob
+        // https://dev-jenkins.ihtsdotools.org/plugin/job-dsl/api-viewer/index.html#path/pipelineJob
+        multibranchPipelineJob('nightly_e2e/' + projectName) {
+            displayName("${projectName}")
             description(generateDescription(projectName, projectSrcUrl, projectNexusUrl, projectGroupArtifact, projectBuildTool, projectLanguage,
                     projectType, projectSlackChannel, projectNotifiedUsers, projectUsesBom, projectDependencies, projectOwner, projectNotes, cveTableUrl))
-
-            scm {
+            branchSources {
                 git {
-                    remote {
-                        github("IHTSDO/${projectName}", 'ssh')
-                        credentials(GIT_HUB_CREDENTIALS_ID)
-                    }
-                    branch('develop')
+                    id(projectName)
+                    remote(projectGitUri)
+                    includes("develop")
+                    excludes("")
                 }
             }
 
-            wrappers {
-                credentialsBinding {
-                    usernamePassword('TEST_LOGIN_USR','TEST_LOGIN_PSW', 'test-account-details')
-                }
-            }
-
+            orphanedItemStrategy {discardOldItems {} }
             triggers { cron(NIGHTLY_TRIGGER_E2E) }
-            logRotator(-1, NUMBER_OF_NIGHTLY_JOBS_TO_KEEP)
-            wrappers { ansiColorBuildWrapper { colorMapName('xterm') } }
 
-            steps {
-                shell {
-                    // Maven returns 1 on build failure, interpret this as unstable, which means the report is ALWAYS generated/published.
-                    command("""$SCRIPTS_PATH/010_Initialize.sh
-$SCRIPTS_PATH/020_SanityCheck.sh
-$SCRIPTS_PATH/500_Build.sh
-$SCRIPTS_PATH/640_EndToEndTest.sh""")
-                    unstableReturn(1)
-                }
-            }
-
-            publishers {
-                htmlPublisher {
-                    reportTargets {
-                        htmlPublisherTarget {
-                            reportName('E2E Report')
-                            useWrapperFileDirectly(true)
-                            reportTitles('Cypress Test Reports')
-                            reportDir('cypress/reports/html')
-                            reportFiles('index.html')
-                            keepAll(false)
-                            alwaysLinkToLastBuild(true)
-                            allowMissing(true)
-                        }
+            factory {
+                pipelineBranchDefaultsProjectFactory {
+                    // TODO: JCO: test to see if same pipeline can be used for gradle and maven.
+                    if (projectBuildTool == 'Gradle') {
+                        scriptId("SnomedPipeline_Maven_${projectLanguage}_E2E")
+                    } else {
+                        scriptId("SnomedPipeline_${projectPipeLineType}_E2E")
                     }
+                    useSandbox(true)
                 }
-
-                slackNotifier {
-                    commitInfoChoice('NONE')
-                    customMessage("E2E testing")
-                    includeCustomMessage(true)
-                    notifyAborted(true)
-                    notifyBackToNormal(true)
-                    notifyEveryFailure(true)
-                    notifyNotBuilt(true)
-                    notifyRegression(true)
-                    notifySuccess(true)
-                    notifyUnstable(true)
-                    room(projectSlackChannel)
-                    sendAsText(true)
-                    includeFailedTests(false)
-                    includeTestSummary(false)
-                }
-
-                mailer(convertToEmails(projectNotifiedUsers), true, true)
             }
         }
     }
