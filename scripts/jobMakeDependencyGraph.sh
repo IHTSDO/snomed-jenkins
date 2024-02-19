@@ -347,7 +347,7 @@ makeLinkFile() {
 
 declare -A projectMap
 
-cd "$JENKINS_HOME/workspace/nightly" || exit 1
+cd "$JENKINS_HOME/workspace" || exit 1
 
 prepareFiles
 createProjectMap
@@ -355,3 +355,4 @@ generateDotFile
 convertDotToPngAndSvg
 makeLinkFile
 makeDependencyGraph
+

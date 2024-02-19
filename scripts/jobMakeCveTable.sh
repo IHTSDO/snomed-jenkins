@@ -3,7 +3,7 @@ LOC=$JENKINS_HOME/userContent
 CVE_TSV_FILE=$LOC/cveTable.tsv
 CVE_HTML_FILE=$LOC/cveTable.html
 CVE_URL=https://ossindex.sonatype.org/vulnerability
-BUILD_URL=$JENKINS_URL/job/nightly/job
+BUILD_URL=$JENKINS_URL/job/nightly_security/job
 JIRA_URL=https://jira.ihtsdotools.org/browse/
 URL_BASE=https://jira.ihtsdotools.org/rest/api/2
 
