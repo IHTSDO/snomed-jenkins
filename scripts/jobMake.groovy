@@ -2,6 +2,12 @@
 import com.xlson.groovycsv.CsvParser
 import jenkins.model.Jenkins
 import java.security.MessageDigest
+import java.net.InetAddress
+
+// Note on pipelines vs freestyle projects:
+//    - Freestyle are in folders, pipelines are not, see ~/workspace/cve
+//    - Pipelines cannot accept cron so cannot easily be scheduled.
+//    - Freestyle you do not see a nice pipeline in the GUI :-(
 
 def envVars = Jenkins.instance.getGlobalNodeProperties()[0].getEnvVars()
 
@@ -26,20 +32,32 @@ COLUMN_SNOMED_DEPENDENCIES = "Snomed Dependencies"
 COLUMN_OWNER = "Owner"
 COLUMN_NOTES = "Notes"
 
-NIGHTLY_TRIGGER_SECURITY = "H H(4-6) * * *"
-NIGHTLY_TRIGGER_E2E = "H H(7-8) * * *"
+FOLDER_JOBS='jobs'
+FOLDER_CVE='cve'
+FOLDER_E2E='e2e'
+
+NIGHTLY_TRIGGER_CVE = "H 5 * * 1-5"
+NIGHTLY_TRIGGER_E2E = "H H(6-8) * * 1-5"
 //NUMBER_OF_JOBS_TO_KEEP = 5
 //NUMBER_OF_DAYS_TO_KEEP = 5
-//NUMBER_OF_NIGHTLY_JOBS_TO_KEEP = 5
+NUMBER_OF_NIGHTLY_JOBS_TO_KEEP = 5
 BANNER_MESSAGE = "Automated build pipeline job, if you edit this pipeline your changes will be lost on next system startup."
+GIT_HUB_CREDENTIALS_ID = '375fc783-9b0d-48be-a251-af24d82922bb'
+
+String hostname = InetAddress.getLocalHost().getHostName()
+
+onProd=hostname.equalsIgnoreCase("prod-jenkins.ihtsdotools.org")
+println "Hostname : ${hostname} (Prod?=${onProd})"
 
 File spreadsheet = new File(SPREADSHEET_FILE_NAME)
 println "Reading ${SPREADSHEET_FILE_NAME}"
 downloadSpreadsheet(spreadsheet)
 makeFolders()
 
-HOOK_FILE = new File('hook_list.txt')
-HOOK_FILE.write("")
+if (onProd) {
+    HOOK_FILE = new File('hook_list.txt')
+    HOOK_FILE.write("")
+}
 
 spreadsheet.withReader { reader ->
     int noOfProjects = 0
@@ -94,7 +112,7 @@ private void downloadSpreadsheet(File spreadsheet) {
 }
 
 void makeFolders() {
-    folder('jobs') {
+    folder(FOLDER_JOBS) {
         displayName('Normal builds of All branches, triggered by github push')
         description("""
 <div style="border-radius:25px;border:5px solid gray;padding:10px;background:#07AAE0;">
@@ -106,11 +124,11 @@ void makeFolders() {
 """)
     }
 
-    folder('nightly_security') {
-        displayName('Nightly Builds of Develop Security')
+    folder(FOLDER_CVE) {
+        displayName('Nightly Builds of Develop CVE')
         description("""
 <div style="border-radius:25px;border:5px solid gray;padding:10px;background:#07AAE0;">
-    <font style="color:white;font-size:30px;">Nightly Builds - Develop is built every night to check for security issues</font><br/>
+    <font style="color:white;font-size:30px;">Nightly Builds - Develop is built every night to check for CVE/security issues</font><br/>
     <font style="font-family:'Courier New';color:black;font-size:20px;">
        <a href="${SPREADSHEET_URL}"><font style="color:white;">Spreadsheet</font></a>
     </font>
@@ -118,7 +136,7 @@ void makeFolders() {
 """)
     }
 
-    folder('nightly_e2e') {
+    folder(FOLDER_E2E) {
         displayName('Nightly Builds of Develop E2E')
         description("""
 <div style="border-radius:25px;border:5px solid gray;padding:10px;background:#07AAE0;">
@@ -154,28 +172,46 @@ void makeMainPipelineJob(String projectName, def row) {
     println "Creating build pipeline : ${projectName} [ ${projectPipeLineType} ]"
 
     // Write information needed to make hooks in github.
-    HOOK_FILE.append("${nameMd5Token} ${projectName}\n")
+    if (onProd) {
+        HOOK_FILE.append("${nameMd5Token} ${projectName}\n")
+    }
 
     // Full pipelines for majority of branches.
-    generatePipeline("jobs", "", "", "", nameMd5Token, projectGitUri, projectName,  description, projectBuildTool, projectLanguage)
+    generatePipeline(FOLDER_JOBS, "", "", "", nameMd5Token, projectGitUri, projectName,  description, projectBuildTool, projectLanguage)
 
     // Setup Nightly Security jobs.
     if (!projectLanguage.toLowerCase().startsWith("jdk")) {
-        println "    Skipping security nightly for : ${projectName} [ ${projectPipeLineType} ]"
+        println "    SKIPPING: cve / ${projectName} [ ${projectPipeLineType} ]"
     } else {
-        generatePipeline("nightly_security", "_CVE", "develop", NIGHTLY_TRIGGER_SECURITY, "", projectGitUri, projectName,  description, projectBuildTool, projectLanguage)
+        generateFreestyle(true, projectGitUri, projectName,  description, projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
     }
 
     // Setup E2E jobs.
     if (!projectLanguage.toLowerCase().startsWith("typescript")) {
-        println "    Skipping E2E nightly for : ${projectName} [ ${projectPipeLineType} ]"
+        println "    SKIPPING: e2e / ${projectName} [ ${projectPipeLineType} ]"
     } else {
-        generatePipeline("nightly_e2e", "_E2E", "develop", NIGHTLY_TRIGGER_E2E, "", projectGitUri, projectName, description,  projectBuildTool, projectLanguage)
+        generateFreestyle(false, projectGitUri, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
     }
 }
 
 String generatePipeline(String folder, String suffix, String includeBranches, String cronExpression, String md5Token, String projectGitUri, String projectName, String desc, String projectBuildTool, String projectLanguage) {
+    // JCO: Force all Java to 17, lets see if it builds, if not and we need to work on it it must be upgraded to 17!
+    if (projectLanguage.toLowerCase().startsWith("jdk")) {
+        int ver=Integer.parseInt(projectLanguage.substring(3))
+
+        if (ver < 17) {
+            println "    Forcing jdk to 17 from ${projectLanguage}"
+            projectLanguage='Jdk17'
+        }
+    }
+
+    // JCO: Maven pipeline includes all gradle config, so use that!
+    if (projectBuildTool == 'Gradle') {
+        projectBuildTool='Maven'
+    }
+
     String projectPipeLineType = new String("${projectBuildTool}_${projectLanguage}")
+    println "    CREATING: ${folder} / ${projectName} (cron='${cronExpression}') (pipeline=${projectPipeLineType})"
 
     // https://jenkinsci.github.io/job-dsl-plugin/#path/multibranchPipelineJob
     multibranchPipelineJob("${folder}/${projectName}") {
@@ -193,25 +229,20 @@ String generatePipeline(String folder, String suffix, String includeBranches, St
 
         orphanedItemStrategy { discardOldItems {} }
 
-        if (cronExpression) {
-            println "    Adding cron : ${cronExpression}"
+        if (onProd && cronExpression) {
+            println "        Adding cron : ${cronExpression}"
             triggers { cron(cronExpression) }
         }
 
         factory {
             pipelineBranchDefaultsProjectFactory {
-                // TODO: JCO: test to see if same pipeline can be used for gradle and maven.
-                if (projectBuildTool == 'Gradle') {
-                    scriptId("SnomedPipeline_Maven_${projectLanguage}${suffix}")
-                } else {
-                    scriptId("SnomedPipeline_${projectPipeLineType}${suffix}")
-                }
+                scriptId("SnomedPipeline_${projectPipeLineType}${suffix}")
                 useSandbox(true)
             }
         }
 
         if (md5Token) {
-            println "    Updating XML for MD5"
+            println "        Updating XML for MD5"
             // There is no DSL API hook for the https://plugins.jenkins.io/multibranch-scan-webhook-trigger/
             // so we need to use the XML configure hook to configure.
             // https://jenkinsci.github.io/job-dsl-plugin/#path/multibranchPipelineJob-configure
@@ -222,6 +253,115 @@ String generatePipeline(String folder, String suffix, String includeBranches, St
                     token md5Token
                 }
             }
+        }
+    }
+}
+
+String generateFreestyle(boolean cveProject, String projectGitUri, String projectName, String desc, String projectBuildTool, String projectLanguage, String projectSlackChannel, String projectNotifiedUsers) {
+    String includeBranches="develop"
+    String folder = FOLDER_E2E
+    String suffix="_E2E"
+    String cronExpression= NIGHTLY_TRIGGER_E2E
+    String slackSubject = "E2E testing"
+    GString commandStr="""$SCRIPTS_PATH/010_Initialize.sh
+$SCRIPTS_PATH/020_SanityCheck.sh
+$SCRIPTS_PATH/500_Build.sh
+$SCRIPTS_PATH/640_EndToEndTest.sh"""
+
+    if (cveProject) {
+        folder = FOLDER_CVE
+        suffix="_CVE"
+        cronExpression= NIGHTLY_TRIGGER_CVE
+        slackSubject = "Security CVE test"
+        commandStr="""$SCRIPTS_PATH/010_Initialize.sh
+$SCRIPTS_PATH/020_SanityCheck.sh
+$SCRIPTS_PATH/600_Security.sh"""
+    }
+
+    println "    CREATING: ${folder} / ${projectName} (cron='${cronExpression}')"
+
+    // https://jenkinsci.github.io/job-dsl-plugin/#path/freeStyleJob
+    freeStyleJob("${folder}/${projectName}") {
+        displayName("${projectName}${suffix}")
+        description(desc)
+        jdk('jdk17')
+
+        scm {
+            git {
+                remote {
+                    github("IHTSDO/${projectName}", 'ssh')
+                    credentials(GIT_HUB_CREDENTIALS_ID)
+                }
+                branch(includeBranches)
+            }
+        }
+
+        triggers { cron(cronExpression) }
+        logRotator(-1, NUMBER_OF_NIGHTLY_JOBS_TO_KEEP)
+        wrappers {
+            ansiColorBuildWrapper { colorMapName('xterm') }
+            credentialsBinding {
+                usernamePassword('TEST_LOGIN_USR','TEST_LOGIN_PSW', 'test-account-details')
+            }
+        }
+
+        steps {
+            shell {
+                command(commandStr)
+                // Maven returns 1 on build failure, interpret this as unstable, which means the report is ALWAYS generated/published.
+                unstableReturn(1)
+            }
+        }
+
+        publishers {
+            if (cveProject) {
+                dependencyCheck('**/target/dependency-check-report.xml')
+            }
+
+            htmlPublisher {
+                reportTargets {
+                    if (cveProject) {
+                        htmlPublisherTarget {
+                            reportName('CVE-Dependency Check Report Details')
+                            reportDir('.')
+                            reportFiles('**/target/dependency-check-report.html')
+                            keepAll(false)
+                            alwaysLinkToLastBuild(false)
+                            allowMissing(true)
+                        }
+                    } else {
+                        htmlPublisherTarget {
+                            reportName('E2E Report')
+                            useWrapperFileDirectly(true)
+                            reportTitles('Cypress Test Reports')
+                            reportDir('cypress/reports/html')
+                            reportFiles('index.html')
+                            keepAll(false)
+                            alwaysLinkToLastBuild(true)
+                            allowMissing(true)
+                        }
+                    }
+                }
+            }
+
+            slackNotifier {
+                commitInfoChoice('NONE')
+                customMessage(slackSubject)
+                includeCustomMessage(true)
+                notifyAborted(true)
+                notifyBackToNormal(true)
+                notifyEveryFailure(true)
+                notifyNotBuilt(true)
+                notifyRegression(true)
+                notifySuccess(true)
+                notifyUnstable(true)
+                room(projectSlackChannel)
+                sendAsText(true)
+                includeFailedTests(false)
+                includeTestSummary(false)
+            }
+
+            mailer(convertToEmails(projectNotifiedUsers), true, true)
         }
     }
 }
@@ -256,4 +396,26 @@ GString generateDescription(String projectName, String projectSrcUrl, String pro
     </font>
 </div>
 """
+}
+
+String convertToEmails(String projectNotifiedUsers) {
+    String[] list = projectNotifiedUsers.tokenize("|")
+    String result = ''
+    Boolean first = true
+
+    for (String email in list) {
+        if (first) {
+            first = false
+        } else {
+            result += ','
+        }
+
+        if (!email.contains('@')) {
+            email += '@snomed.org'
+        }
+
+        result += email
+    }
+
+    return result
 }

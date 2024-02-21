@@ -65,31 +65,36 @@ deployDebianPackages() {
 
 echo "--------------------------------------"
 
-if [[ $SNOMED_PROJECT_DEPLOY_ENABLED == TRUE ]]; then
-    case $SNOMED_PROJECT_LANGUAGE in
-        Cypress|Typescript|Javascript)
-            deployDebianPackages
+if [[ $HOST =~ prod-jenkins* ]]; then
+
+    if [[ $SNOMED_PROJECT_DEPLOY_ENABLED == TRUE ]]; then
+        case $SNOMED_PROJECT_LANGUAGE in
+            Cypress|Typescript|Javascript)
+                deployDebianPackages
+                ;;
+            *)
+                case $SNOMED_PROJECT_BUILD_TOOL in
+                    maven)
+                        deployDebianPackages
+                        ;;
+                    gradle)
+                        ./gradlew uploadArchives
+                        ;;
+                    none)
+                        echo "No deploy tool required."
+                        ;;
+                    *)
+                        echo "Unknown build tool: ${SNOMED_PROJECT_BUILD_TOOL}"
+                        exit 1
+                        ;;
+                esac
             ;;
-        *)
-            case $SNOMED_PROJECT_BUILD_TOOL in
-                maven)
-                    deployDebianPackages
-                    ;;
-                gradle)
-                    ./gradlew uploadArchives
-                    ;;
-                none)
-                    echo "No deploy tool required."
-                    ;;
-                *)
-                    echo "Unknown build tool: ${SNOMED_PROJECT_BUILD_TOOL}"
-                    exit 1
-                    ;;
-            esac
-        ;;
-    esac
+        esac
+    else
+        echo Deployment disabled for the project.
+    fi
 else
-    echo Deployment disabled for the project.
+    echo "Can only deploy from prod-jenkins"
 fi
 
 echo "--------------------------------------"

@@ -281,6 +281,7 @@ convertDotToPngAndSvg() {
     echo "Generating $PNG_FILE from $DOT_FILE"
     dot -Tpng "$DOT_FILE" -o "$PNG_FILE"
     dot -Tsvg "$DOT_FILE" -o "$SVG_FILE"
+    mogrify -resize 1366x "$PNG_FILE"
     echo "Done"
 }
 
@@ -347,7 +348,7 @@ makeLinkFile() {
 
 declare -A projectMap
 
-cd "$JENKINS_HOME/workspace" || exit 1
+cd "$JENKINS_HOME/workspace/cve" || exit 1
 
 prepareFiles
 createProjectMap

@@ -22,7 +22,7 @@ createNewTicket() {
     local cve=$2
     local list=$3
     local summary="CVE: Address ${cve} (${score})"
-    local listFmt=$(echo "$list" | sed 's/,/|\r\n|/g')
+    local listFmt=$(echo "$list" | sed 's/,/|\\n|/g')
     local description="Automatically created CVE ticket:\nMitigate CVE: [${cve}|${CVE_URL}/${cve}]\nSystems affected:\n||System||\n|${listFmt}|\n"
     local issueType="Improvement"
     local label="cve"
@@ -53,8 +53,12 @@ createNewTicket() {
 }
 EOF
 
-    curl -s -u "${JIRA_CREDS}" -H "Content-Type: application/json" -X POST \
-        --data "${jsonData}" "${URL_BASE}/issue" | jq '.key'
+    if [[ $HOST =~ jenkins* ]]; then
+        json=$(curl -s -u "${JIRA_CREDS}" -H "Content-Type: application/json" -X POST --data "${jsonData}" "${URL_BASE}/issue")
+        echo "$json" | jq '.key'
+    else
+        echo "WARNING: Jira tickets can only be created from jenkins"
+    fi
 }
 
 checkAndCreate() {
@@ -73,6 +77,7 @@ checkAndCreate() {
 }
 
 echo "Checking for new CVE tickets to create using $CVE_TSV_FILE"
+HOST=$(hostname)
 lastScore="0.0"
 lastCve=""
 list=""

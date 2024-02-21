@@ -3,7 +3,7 @@ LOC=$JENKINS_HOME/userContent
 CVE_TSV_FILE=$LOC/cveTable.tsv
 CVE_HTML_FILE=$LOC/cveTable.html
 CVE_URL=https://ossindex.sonatype.org/vulnerability
-BUILD_URL=$JENKINS_URL/job/nightly_security/job
+BUILD_URL=$JENKINS_URL/job/cve/job
 JIRA_URL=https://jira.ihtsdotools.org/browse/
 URL_BASE=https://jira.ihtsdotools.org/rest/api/2
 
@@ -149,6 +149,8 @@ scanForCves() {
     echo "Scanning code for CVE's"
 
     while read -r name; do
+        echo "    doc:${name}"
+
         local cvelines=$(xmlstarlet sel \
             -t \
             -m "//_:dependencies/_:dependency/_:vulnerabilities/_:vulnerability" \
@@ -160,11 +162,13 @@ scanForCves() {
             -n \
             "$name")
 
-        if [[ $cvelines == "" ]] || [[ ! $name =~ nightly ]]; then
+        if [[ $cvelines == "" ]]; then
+            echo "        Skipping no cve's"
             continue
         fi
 
-        local n=$(echo "$name" | sed -e 's/.*nightly\///' -e 's/\/.*//')
+        # Get project name from the folder-name.
+        local n=$(echo "$name" | sed -e 's/.*workspace\/cve\///' -e 's/\/.*//')
         echo "    $n"
 
         while read -r cve; do
@@ -190,19 +194,19 @@ scanForCves() {
                 echo "        $k | $v3"
             fi
         done<<<"$cvelines"
-    done <<<"$(find "$JENKINS_HOME/workspace" -name dependency-check-report.xml -print)"
+    done <<<"$(find "$JENKINS_HOME/workspace/cve" -name dependency-check-report.xml -print)"
 }
 
 writeToTsv() {
     for key in "${!cves[@]}"; do
         IFS='|' read -r -a cveArray <<< "$key"
-        local score="${cveArray[0]}"
-        local cve="${cveArray[1]}"
-        local name="${cveArray[2]}"
-        local bigger=$(echo "$score >= 7.0" | bc)
+        local cvescore="${cveArray[0]}"
+        local cveid="${cveArray[1]}"
+        local projectName="${cveArray[2]}"
+        local bigger=$(echo "$cvescore >= 7.0" | bc)
 
         if (( bigger > 0 )); then
-            printf "%s\t%s\t%s\n" "$score" "$cve" "$name"
+            printf "%s\t%s\t%s\n" "$cvescore" "$cveid" "$projectName"
         fi
     done | sort -n -r
 }
@@ -219,7 +223,6 @@ writeSummary() {
 
     echo "<br/>"
     echo "Download spreadsheet of this table: <a href='cveTable.tsv' target='_top'>cveTable.tsv</a><br/>"
-    echo "<a href='cveTable.html' target='_top'>View report full screen</a><br/>"
     echo "<br/>"
 }
 
