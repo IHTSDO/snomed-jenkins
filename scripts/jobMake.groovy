@@ -177,7 +177,11 @@ void makeMainPipelineJob(String projectName, def row) {
     }
 
     // Full pipelines for majority of branches.
-    generatePipeline(FOLDER_JOBS, "", "", "", nameMd5Token, projectGitUri, projectName,  description, projectBuildTool, projectLanguage)
+    if (projectType.equalsIgnoreCase("bom")) {
+        generatePipeline(FOLDER_JOBS, projectType, "", "", nameMd5Token, projectGitUri, projectName,  description, projectBuildTool, projectLanguage)
+    } else {
+        generatePipeline(FOLDER_JOBS, "", "", "", nameMd5Token, projectGitUri, projectName,  description, projectBuildTool, projectLanguage)
+    }
 
     // Setup Nightly Security jobs.
     if (!projectLanguage.toLowerCase().startsWith("jdk")) {
@@ -215,7 +219,7 @@ String generatePipeline(String folder, String suffix, String includeBranches, St
 
     // https://jenkinsci.github.io/job-dsl-plugin/#path/multibranchPipelineJob
     multibranchPipelineJob("${folder}/${projectName}") {
-        displayName("${projectName}${suffix}")
+        displayName("${projectName}")
         description(desc)
 
         branchSources {
