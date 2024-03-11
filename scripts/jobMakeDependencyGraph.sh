@@ -53,12 +53,14 @@ fixCve() {
 }
 
 makeLink() {
-    local g="$( fixLabel "$1" )"
-    local a="$( fixLabel "$2" )"
-    local p="$( fixLabel "$3" )"
+    local g="$( fixLabel "$1")"
+    local a="$( fixLabel "$2")"
+    local p="$( fixLabel "$3")"
 
-    if [[ -z $p ]]; then
-        echo "$( fixLabel "$4" )_UNKNOWN"
+    if [[ "$a" == "snomed_parent_owasp" ]]; then
+        echo "org_snomed__snomed_parent_owasp"
+    elif [[ -z $p ]]; then
+        echo "$( fixLabel "$4")_UNKNOWN"
     else
         echo "${g}__$p:$a"
     fi
@@ -77,7 +79,7 @@ EOF
 }
 
 printLegend() {
-    cat<<EOF
+    cat << EOF
 
     // Legend
     subgraph clusterLegend {
@@ -117,7 +119,7 @@ EOF
 }
 
 printTrailer() {
-    cat<<EOF
+    cat << EOF
 
     // END
 }
@@ -142,7 +144,7 @@ printCVEs() {
         echo "    $node [fontcolor=\"black\" fillcolor=\"/reds4/3:/reds4/2\" fontname=\"courier\" label=<<table border=\"0\">"
         echo "            <tr><td><b>${cve}</b></td><td>${score}</td></tr>"
         echo "        </table>>];"
-    done<"$CVE_FILE"
+    done < "$CVE_FILE"
 
     echo
     echo "    // Links from projects to CVE"
@@ -161,7 +163,7 @@ printCVEs() {
                     break
             fi
         done
-    done<"$CVE_FILE"
+    done < "$CVE_FILE"
 
     echo
 }
@@ -172,7 +174,12 @@ generateDotFile() {
     {
         printHeader
         printLegend
-        printCVEs
+        #        printCVEs
+
+        echo "    org_snomed__snomed_parent_owasp [fontcolor=\"black\" fillcolor=\"/greens4/1:/greens4/3\" label=<<table border='0'>"
+        echo "        <tr><td port='snomed_parent_owasp'><font point-size='12'><b>snomed_parent_owasp</b></font></td></tr>"
+        echo "    </table>>];"
+
 
         for pom in */pom.xml; do
             processPom true "$pom"
@@ -215,23 +222,19 @@ processPom() {
     id="$gId:$aId"
     local projectName=${projectMap["$id"]}
     local nodeId="$gId:${projectMap[$id]}"
-    local nodeIdLinkable=$( fixLabel "$nodeId" )
-    local projectNameLinkable="$( fixLabel "$projectName" )"
+    local nodeIdLinkable=$( fixLabel "$nodeId")
+    local projectNameLinkable="$( fixLabel "$projectName")"
     echo "    // POM         : $pom"
     echo "    //     gId:aId : $id / ${projectMap["$id"]} / $nodeId"
 
     if $outputNode; then
         echo -n "    $nodeIdLinkable [fontcolor=\"black\" "
 
-        if [[ $id =~ kai ]]; then
-            echo -n "fillcolor=\"/oranges4/1:/oranges4/3\""
-        else
-            if [[ $bom == "snomed-parent-bom" ]] || [[ $id == org.snomed:snomed-parent-bom ]] || [[ $id == org.snomed:snomed-parent-owasp ]]; then
-                echo -n "fillcolor=\"/greens4/1:/greens4/3\""
-            fi
+        if [[ $bom == "snomed-parent-bom" ]] || [[ $id == org.snomed:snomed-parent-bom ]] || [[ $id == org.snomed:snomed-parent-owasp ]]; then
+            echo -n "fillcolor=\"/greens4/1:/greens4/3\""
         fi
 
-        echo "label=<<table border='0'>"
+        echo " label=<<table border='0'>"
         echo "            <tr><td port='$projectNameLinkable'><font point-size='12'><b>$projectName</b></font></td></tr>"
 
         for line in $modules; do
@@ -253,11 +256,6 @@ processPom() {
         fi
 
         if [[ $dep =~ ihtsdo ]]; then
-            render=true
-        fi
-
-        if [[ $dep =~ kai ]]; then
-            linkcol="red"
             render=true
         fi
 
@@ -329,15 +327,15 @@ addToProjectMap() {
 makeLinkFile() {
     echo "Generating $LINK_FILE from $DOT_FILE, the dependencies"
 
-    grep " -> " "$DOT_FILE" \
-        | grep -v " project:" \
-        | grep -v " CVE_" \
-        | sed -e 's/^ *//' \
+    grep " -> " "$DOT_FILE" |
+          grep -v " project:" |
+          grep -v " CVE_" |
+          sed -e 's/^ *//' \
               -e 's/ -> /\t/' \
               -e 's/__/:/g' \
               -e 's/_/-/g' \
-              -e 's/ *\[.*$//' \
-        | sort -u > "$LINK_FILE"
+              -e 's/ *\[.*$//' |
+          sort -u > "$LINK_FILE"
 
     # Join to 1 line per project with comma separator for each dependency.
     perl -p0E 'while(s/^((.+?)\t.*)\n\2\t/$1,/gm){}' -i "$LINK_FILE"
@@ -356,4 +354,3 @@ generateDotFile
 convertDotToPngAndSvg
 makeLinkFile
 makeDependencyGraph
-

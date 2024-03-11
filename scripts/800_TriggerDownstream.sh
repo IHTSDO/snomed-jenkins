@@ -5,25 +5,40 @@ figlet -w 500 "Trigger Downstream Builds"
 buildDependency() {
     DEPTOBUILD=$1
 
-    if [[ -z $CRUMB ]]; then
-        echo "    Logging in to ${URL}"
-        CRUMB=$(curl -s --cookie-jar /tmp/cookies -u "${USERNAME}:${API_TOKEN}" "https://${URL}/crumbIssuer/api/json" | jq -r '.crumb')
-        TOKEN_VALUE=$(curl -s -X POST --cookie /tmp/cookies "https://${URL}/me/descriptorByName/jenkins.security.ApiTokenProperty/generateNewToken?newTokenName=${TOKEN_NAME}" -H "Jenkins-Crumb:${CRUMB}" -u "${USERNAME}:${API_TOKEN}" | jq -r '.data.tokenValue')
+    if [[ -z "$CRUMB" ]]; then
+        echo "Logging in to ${URL}"
+        CRUMB=$(curl -s --cookie-jar "${COOKIE_FILE}" -u "${BUILD_TRIGGER_USR}:${BUILD_TRIGGER_PSW}" "https://${URL}/crumbIssuer/api/json" | jq -r '.crumb')
+        TOKEN_VALUE=$(curl -s -X POST --cookie "${COOKIE_FILE}" "https://${URL}/me/descriptorByName/jenkins.security.ApiTokenProperty/generateNewToken?newTokenName=${TOKEN_NAME}" -H "Jenkins-Crumb:${CRUMB}" -u "${BUILD_TRIGGER_USR}:${BUILD_TRIGGER_PSW}" | jq -r '.data.tokenValue')
+        echo "Checking for dependencies of ${SNOMED_PROJECT_NAME}"
     fi
 
-    echo -n "    ${DEPTOBUILD}: "
-#    echo curl -s -X POST --write-out '%{http_code}\n' --USER ${USERNAME}:"${TOKEN_VALUE}" "https://${URL}/job/jobs/job/${DEPTOBUILD}/job/${GIT_BRANCH}/build?delay=${DELAY}"
-    echo "    ${DEPTOBUILD} -> ${GIT_BRANCH}"
+    echo -n "    Building dependency: ${DEPTOBUILD} = "
+    status=$(curl -s -X POST --write-out '%{http_code}\n' --USER "${BUILD_TRIGGER_USR}:${TOKEN_VALUE}" "https://${URL}/job/jobs/job/${DEPTOBUILD}/job/${GIT_BRANCH}/build?delay=${DELAY}" 2>&1 | head -1)
+
+    if [[ "$status" == "201" ]]; then
+        echo "${GIT_BRANCH} Running"
+    else
+        if [[ "$GIT_BRANCH" == "main" ]]; then
+            GIT_BRANCH="master"
+            status=$(curl -s -X POST --write-out '%{http_code}\n' --USER "${BUILD_TRIGGER_USR}:${TOKEN_VALUE}" "https://${URL}/job/jobs/job/${DEPTOBUILD}/job/master/build?delay=${DELAY}" 2>&1 | head -1)
+        elif [[ "$GIT_BRANCH" == "master" ]]; then
+            GIT_BRANCH="main"
+            status=$(curl -s -X POST --write-out '%{http_code}\n' --USER "${BUILD_TRIGGER_USR}:${TOKEN_VALUE}" "https://${URL}/job/jobs/job/${DEPTOBUILD}/job/main/build?delay=${DELAY}" 2>&1 | head -1)
+        fi
+
+        if [[ "$status" == "201" ]]; then
+            echo "${GIT_BRANCH} Running"
+        else
+            echo "${GIT_BRANCH} Branch not found"
+        fi
+    fi
 }
 
-set
-exit 1
-
+COOKIE_FILE=/tmp/trigger_cookie.txt
 CRUMB=""
 URL=jenkins.ihtsdotools.org
-DELAY="60sec"
+DELAY="0sec"
 TOKEN_NAME="${SNOMED_PROJECT_NAME}-${GIT_BRANCH}"
-echo "Checking for dependencies of ${SNOMED_PROJECT_NAME}"
 
 while IFS="," read -r -a LINEARR; do
     # get required columns from spreadsheet, removing quotes.
@@ -37,7 +52,7 @@ while IFS="," read -r -a LINEARR; do
         DEP_PRJ="$(echo "${DEP}" | cut -d':' -f2)"
 
         # If is dependency of this project then build it!
-        if [[ "$DEP_PRJ" == "$SNOMED_PROJECT_NAME" ]]; then
+        if [[ "$SNOMED_PROJECT_NAME" == "$DEP_PRJ" ]] && [[ "$SNOMED_PROJECT_NAME" != "$PRJ" ]]; then
             buildDependency "${PRJ}"
         fi
     done
