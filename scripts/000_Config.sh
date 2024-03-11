@@ -5,8 +5,8 @@ fixStr() {
 }
 
 BASEFOLDER="/tmp/"
-SPREADSHEET_FILE_NAME="${BASEFOLDER}ProjectsDSL.csv"
 SPREADSHEET="${SNOMED_SPREADSHEET_URL}/gviz/tq?tqx=out:csv"
+export SPREADSHEET_FILE_NAME="${BASEFOLDER}ProjectsDSL.csv"
 
 if [[ -e $SPREADSHEET_FILE_NAME ]]; then
     echo "Checking age of ${SPREADSHEET_FILE_NAME}"
@@ -36,7 +36,7 @@ fi
 
 IFS="/" read -r -a JOBARR <<< "$JOB_NAME"
 PROJNAME=${JOBARR[1]}
-line=$(grep -i "^\"TRUE\",\"$PROJNAME\"" /tmp/ProjectsDSL.csv | head -1)
+line=$(grep -i "^\"TRUE\",\"$PROJNAME\"" "${SPREADSHEET_FILE_NAME}" | head -1)
 IFS="," read -r -a LINEARR <<< "$line"
 
 export SNOMED_PROJECT_ACTIVE=$(fixStr "${LINEARR[0]}")
