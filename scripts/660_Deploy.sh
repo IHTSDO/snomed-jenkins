@@ -5,7 +5,7 @@ figlet -w 500 "Deploy to Nexus"
 # TODO: https://github.com/docker/docker-credential-helpers#available-programs
 deployToDockerHub() {
     if [[ $GIT_BRANCH == "master" ]] || [[ $GIT_BRANCH == "main" ]]; then
-        containsJib=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="build"]/*[local-name()="plugins"]/*[local-name()="plugin"]/*[local-name()="artifactId"]' pom.xml | grep -c jib-maven-plugin)
+        containsJib=$((xmllint --xpath '/*[local-name()="project"]/*[local-name()="build"]/*[local-name()="plugins"]/*[local-name()="plugin"]/*[local-name()="artifactId"]' pom.xml 2>&1|| true) | (grep -c jib-maven-plugin || true))
 
         if ((containsJib == 1)); then
             figlet -w 500 "Docker Hub"
