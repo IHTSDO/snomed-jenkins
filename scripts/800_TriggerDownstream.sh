@@ -53,7 +53,11 @@ while IFS="," read -r -a LINEARR; do
 
         # If is dependency of this project then build it!
         if [[ "$SNOMED_PROJECT_NAME" == "$DEP_PRJ" ]] && [[ "$SNOMED_PROJECT_NAME" != "$PRJ" ]]; then
-            buildDependency "${PRJ}"
+            if $DOWNSTREAM_ENABLED; then
+                buildDependency "${PRJ}"
+            else
+                echo "Not building ${PRJ}"
+            fi
         fi
     done
 done < "${SPREADSHEET_FILE_NAME}"
