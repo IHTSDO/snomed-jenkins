@@ -10,7 +10,7 @@ case $SNOMED_PROJECT_LANGUAGE in
     *)
         case $SNOMED_PROJECT_BUILD_TOOL in
             maven)
-                mvn clean package -DskipTests -Ddependency-check.skip=true
+                mvn -U clean package -DskipTests -Ddependency-check.skip=true
                 ;;
             gradle)
                 ./gradlew clean build buildDeb -x test -x spotbugsMain -x spotbugsTest -x checkstyleTest -x checkstyleMain
