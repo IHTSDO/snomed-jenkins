@@ -14,7 +14,8 @@ findCveTickets() {
   "jql": "summary~\"${cve}\" or text~\"${cve}\""
 }
 EOF
-    local json=$(curl -s -u "${JIRA_CREDS}" -H "Content-Type: application/json" -X POST \
+    local json
+    json=$(curl -s -u "${JIRA_CREDS}" -H "Content-Type: application/json" -X POST \
         --data "${jsonData}" "${URL_BASE}/search")
 
     num=$(echo "$json" | jq '.total')
@@ -151,7 +152,8 @@ scanForCves() {
     while read -r name; do
         echo "    doc:${name}"
 
-        local cvelines=$(xmlstarlet sel \
+        local cvelines
+        cvelines=$(xmlstarlet sel \
             -t \
             -m "//_:dependencies/_:dependency/_:vulnerabilities/_:vulnerability" \
             -v '_:name' \
@@ -168,7 +170,8 @@ scanForCves() {
         fi
 
         # Get project name from the folder-name.
-        local n=$(echo "$name" | sed -e 's/.*workspace\/cve\///' -e 's/\/.*//')
+        local n
+        n=$(echo "$name" | sed -e 's/.*workspace\/cve\///' -e 's/\/.*//')
         echo "    $n"
 
         while read -r cve; do
@@ -203,7 +206,8 @@ writeToTsv() {
         local cvescore="${cveArray[0]}"
         local cveid="${cveArray[1]}"
         local projectName="${cveArray[2]}"
-        local bigger=$(echo "$cvescore >= 7.0" | bc)
+        local bigger
+        bigger=$(echo "$cvescore >= 7.0" | bc)
 
         if (( bigger > 0 )); then
             printf "%s\t%s\t%s\n" "$cvescore" "$cveid" "$projectName"
@@ -214,7 +218,8 @@ writeToTsv() {
 writeSummary() {
     writeHtmlTableHeaderSummary
 
-    local riskyCves=$(cut -f 1,2 < "$CVE_TSV_FILE" | sort -u)
+    local riskyCves
+    riskyCves=$(cut -f 1,2 < "$CVE_TSV_FILE" | sort -u)
     echo "<tr><td class='CVEred'>Number of CVE's CRITICAL (9.0 - 10.0): </td><td class='CVEred'>$(printf '%s' "$riskyCves" | grep -c -P '^(9|10)\.')</td></tr>"
     echo "<tr><td class='CVEorange'>Number of CVE's HIGH (8.0 - 8.9): </td><td class='CVEorange'>$(printf '%s' "$riskyCves" | grep -c -P '^8\.')</td></tr>"
     echo "<tr><td class='CVEyellow'>Number of CVE's HIGH (7.0 - 7.9): </td><td class='CVEyellow'>$(printf '%s' "$riskyCves" | grep -c -P '^7\.')</td></tr>"
@@ -230,7 +235,11 @@ outCve() {
     local lastScore="$1"
     local lastCve="$2"
     local lastName="$3"
-    local bigger7=$(echo "$lastScore >= 7.0" | bc)
+    local bigger7
+    local bigger9
+    local scoreclass
+    local tickets
+    bigger7=$(echo "$lastScore >= 7.0" | bc)
 
     if (( bigger7 > 0 )); then
         bigger8=$(echo "$lastScore >= 8.0" | bc)
@@ -271,6 +280,9 @@ writeToHtml() {
     local lastCve=""
     local list=""
     local first=true
+    local score
+    local cve
+    local name
 
     while read -r score cve name; do
         if $first; then
