@@ -228,6 +228,7 @@ writeSummary() {
 
     echo "<br/>"
     echo "Download spreadsheet of this table: <a href='cveTable.tsv' target='_top'>cveTable.tsv</a><br/>"
+    echo "Generated: $(date)<br/>"
     echo "<br/>"
 }
 
@@ -278,35 +279,33 @@ writeToHtml() {
 
     local lastScore="0.0"
     local lastCve=""
-    local list=""
+    local moduleList=""
     local first=true
     local score
     local cve
-    local name
+    local module
 
-    while read -r score cve name; do
+    while IFS=$'\t' read -r score cve module; do
         if $first; then
             lastScore="$score"
             lastCve="$cve"
-            list="<a href='$BUILD_URL/$name' target='_top'>$name</a>"
+            moduleList="<a href='$BUILD_URL/$module' target='_top'>$module</a>"
             first=false
             continue
         fi
 
-        if [[ $lastCve == "$cve" ]]; then
-            list="$list,<br/><a href='$BUILD_URL/$name' target='_top'>$name</a>"
-            continue
+        if [[ "$lastCve" == "$cve" ]]; then
+            moduleList="$moduleList,<br/><a href='$BUILD_URL/$module' target='_top'>$module</a>"
+        else
+            outCve "$lastScore" "$lastCve" "$moduleList"
+            lastScore="$score"
+            lastCve="$cve"
+            moduleList="<a href='$BUILD_URL/$module' target='_top'>$module</a>"
         fi
-
-        outCve "$score" "$cve" "$list"
-
-        lastScore="$score"
-        lastCve="$cve"
-        list="<a href='$BUILD_URL/$name' target='_top'>$name</a>"
     done<"$CVE_TSV_FILE"
 
     if [[ $lastCve != "" ]]; then
-        outCve "$lastScore" "$lastCve" "$list"
+        outCve "$lastScore" "$lastCve" "$moduleList"
     fi
 
     writeHtmlTableTrailer

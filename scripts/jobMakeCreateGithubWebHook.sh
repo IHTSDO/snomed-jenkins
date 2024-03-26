@@ -65,8 +65,8 @@ if [[ $HOST =~ prod-jenkins* ]]; then
         if [[ -z $hook ]]; then
             makeHook "$REPO" "${TOKEN}"
         else
-            id=$(echo $hook | sed 's/,.*//')
-            url=$(echo $hook | sed 's/.*, //')
+            id="${hook//,*/}"
+            url="${hook//*, /}"
 
             if [[ $hook =~ dev-jenkins ]]; then
                 replaceHook "$REPO" "${TOKEN}" "${id}"

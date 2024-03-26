@@ -22,11 +22,13 @@ createNewTicket() {
     local cve=$2
     local list=$3
     local summary="CVE: Address ${cve} (${score})"
-    local listFmt=$(echo "$list" | sed 's/,/|\\n|/g')
+    local listFmt
+    listFmt=$(echo "$list" | sed 's/,/|\\n|/g')
     local description="Automatically created CVE ticket:\nMitigate CVE: [${cve}|${CVE_URL}/${cve}]\nSystems affected:\n||System||\n|${listFmt}|\n"
     local issueType="Improvement"
     local label="cve"
-    local bigger9=$(echo "$score >= 9.0" | bc)
+    local bigger9
+    bigger9=$(echo "$score >= 9.0" | bc)
 
     if (( bigger9 > 0 )); then
         priority="Critical / High"
@@ -65,7 +67,8 @@ checkAndCreate() {
     local score=$1
     local cve=$2
     local list=$3
-    local num=$(findCveTicket "$cve")
+    local num
+    num=$(findCveTicket "$cve")
 
     if (( num > 0 )); then
         echo "    Found existing ticket, not creating new one for ${cve} (${score}) (Number of existing tickets = $num)"

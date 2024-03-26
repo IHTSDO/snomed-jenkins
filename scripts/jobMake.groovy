@@ -36,8 +36,6 @@ FOLDER_JOBS='jobs'
 FOLDER_CVE='cve'
 FOLDER_E2E='e2e'
 
-NIGHTLY_TRIGGER_CVE = "H 5 * * 1-5"
-NIGHTLY_TRIGGER_E2E = "H H(6-8) * * 1-5"
 //NUMBER_OF_JOBS_TO_KEEP = 5
 //NUMBER_OF_DAYS_TO_KEEP = 5
 NUMBER_OF_NIGHTLY_JOBS_TO_KEEP = 5
@@ -45,7 +43,6 @@ BANNER_MESSAGE = "Automated build pipeline job, if you edit this pipeline your c
 GIT_HUB_CREDENTIALS_ID = '375fc783-9b0d-48be-a251-af24d82922bb'
 
 String hostname = InetAddress.getLocalHost().getHostName()
-
 onProd=hostname.equalsIgnoreCase("prod-jenkins.ihtsdotools.org")
 println "Hostname : ${hostname} (Prod?=${onProd})"
 
@@ -55,8 +52,15 @@ downloadSpreadsheet(spreadsheet)
 makeFolders()
 
 if (onProd) {
+    println "On production"
     HOOK_FILE = new File('hook_list.txt')
     HOOK_FILE.write("")
+    NIGHTLY_TRIGGER_CVE = "H 5 * * 1-5"
+    NIGHTLY_TRIGGER_E2E = "H H(6-8) * * 1-5"
+} else {
+    println "NOT on production"
+    NIGHTLY_TRIGGER_CVE = ""
+    NIGHTLY_TRIGGER_E2E = ""
 }
 
 spreadsheet.withReader { reader ->
@@ -245,7 +249,7 @@ String generatePipeline(String folder, String suffix, String includeBranches, St
             }
         }
 
-        if (md5Token) {
+        if (md5Token && onProd) {
             println "        Updating XML for MD5"
             // There is no DSL API hook for the https://plugins.jenkins.io/multibranch-scan-webhook-trigger/
             // so we need to use the XML configure hook to configure.
@@ -300,7 +304,11 @@ $SCRIPTS_PATH/600_Security.sh"""
             }
         }
 
-        triggers { cron(cronExpression) }
+        if (onProd && cronExpression) {
+            println "        Adding cron : ${cronExpression}"
+            triggers { cron(cronExpression) }
+        }
+
         logRotator(-1, NUMBER_OF_NIGHTLY_JOBS_TO_KEEP)
         wrappers {
             ansiColorBuildWrapper { colorMapName('xterm') }
@@ -348,21 +356,23 @@ $SCRIPTS_PATH/600_Security.sh"""
                 }
             }
 
-            slackNotifier {
-                commitInfoChoice('NONE')
-                customMessage(slackSubject)
-                includeCustomMessage(true)
-                notifyAborted(true)
-                notifyBackToNormal(true)
-                notifyEveryFailure(true)
-                notifyNotBuilt(true)
-                notifyRegression(true)
-                notifySuccess(true)
-                notifyUnstable(true)
-                room(projectSlackChannel)
-                sendAsText(true)
-                includeFailedTests(false)
-                includeTestSummary(false)
+            if (onProd) {
+                slackNotifier {
+                    commitInfoChoice('NONE')
+                    customMessage(slackSubject)
+                    includeCustomMessage(true)
+                    notifyAborted(true)
+                    notifyBackToNormal(true)
+                    notifyEveryFailure(true)
+                    notifyNotBuilt(true)
+                    notifyRegression(true)
+                    notifySuccess(false)
+                    notifyUnstable(true)
+                    room(projectSlackChannel)
+                    sendAsText(true)
+                    includeFailedTests(false)
+                    includeTestSummary(false)
+                }
             }
 
             mailer(convertToEmails(projectNotifiedUsers), true, true)
@@ -371,9 +381,9 @@ $SCRIPTS_PATH/600_Security.sh"""
 }
 
 GString generateDescription(String projectName, String projectSrcUrl, String projectNexusUrl, String projectGroupArtifact,
-                            String projectBuildTool, String projectLanguage, String projectType, String projectSlackChannel,
-                            String projectNotifiedUsers, Boolean projectUsesBom, String projectDependencies, String projectOwner, String projectNotes,
-                            String cveTableUrl) {
+                                   String projectBuildTool, String projectLanguage, String projectType, String projectSlackChannel,
+                                   String projectNotifiedUsers, Boolean projectUsesBom, String projectDependencies, String projectOwner, String projectNotes,
+                                   String cveTableUrl) {
     return """
 <div style="border-radius:25px;border:5px solid gray;padding:10px;background:#07AAE0;">
     <font style="color:white;font-size:30px;">${BANNER_MESSAGE}</font><br/>

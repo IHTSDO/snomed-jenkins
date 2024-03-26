@@ -49,13 +49,17 @@ fixLabel() {
 }
 
 fixCve() {
-    echo "${1^^}" | sed -e 's/-/_/g'
+    local str="${1^^}"
+    echo "${str//-/_}"
 }
 
 makeLink() {
-    local g="$( fixLabel "$1")"
-    local a="$( fixLabel "$2")"
-    local p="$( fixLabel "$3")"
+    local g
+    local a
+    local p
+    g="$( fixLabel "$1")"
+    a="$( fixLabel "$2")"
+    p="$( fixLabel "$3")"
 
     if [[ "$a" == "snomed_parent_owasp" ]]; then
         echo "org_snomed__snomed_parent_owasp"
@@ -194,18 +198,27 @@ generateDotFile() {
 }
 
 processPom() {
-    local outputNode=$1
-    local pom=$2
+    local outputNode
+    local pom
+    local gId
+    local aId
+    local modules
+    local deps
+    local dList
+    local bom
+    local pomFolder
+    local parentPom
 
-    local gId=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="groupId"]/text()' "$pom" 2>&1 | sed -e 's/XPath set is empty/-/g')
-    local aId=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="artifactId"]/text()' "$pom" 2>&1 | sed -e 's/XPath set is empty/-/g')
-    local modules=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="modules"]/*[local-name()="module"]/text()' "$pom" 2>&1 | sed -e 's/XPath set is empty/-/g')
-    local deps=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="dependencies"]/*[local-name()="dependency"]' "$pom" 2>&1 | sed -e 's/XPath set is empty/-/g')
-    local dList=$(echo "$deps" | tr -d \\n | sed -e 's/<\/groupId>[^<]*<artifactId>/:/g' -e 's/<\/artifactId>/\n/g' -e 's/>/>\n/g' | sort -u | grep -v '<')
-    local bom=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="parent"]/*[local-name()="artifactId"]/text()' "$pom" 2>&1 | sed -e 's/XPath set is empty/-/g')
-
-    local pomFolder="${pom//\/pom.xml/}"
-    local parentPom="$pomFolder/../pom.xml"
+    outputNode=$1
+    pom=$2
+    gId=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="groupId"]/text()' "$pom" 2>&1 | sed -e 's/XPath set is empty/-/g')
+    aId=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="artifactId"]/text()' "$pom" 2>&1 | sed -e 's/XPath set is empty/-/g')
+    modules=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="modules"]/*[local-name()="module"]/text()' "$pom" 2>&1 | sed -e 's/XPath set is empty/-/g')
+    deps=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="dependencies"]/*[local-name()="dependency"]' "$pom" 2>&1 | sed -e 's/XPath set is empty/-/g')
+    dList=$(echo "$deps" | tr -d \\n | sed -e 's/<\/groupId>[^<]*<artifactId>/:/g' -e 's/<\/artifactId>/\n/g' -e 's/>/>\n/g' | sort -u | grep -v '<')
+    bom=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="parent"]/*[local-name()="artifactId"]/text()' "$pom" 2>&1 | sed -e 's/XPath set is empty/-/g')
+    pomFolder="${pom//\/pom.xml/}"
+    parentPom="$pomFolder/../pom.xml"
 
     if [[ -e $parentPom ]]; then
         gId=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="groupId"]/text()' "$parentPom" 2>&1 | sed -e 's/XPath set is empty/-/g')
