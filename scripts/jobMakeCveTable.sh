@@ -21,7 +21,7 @@ EOF
     num=$(echo "$json" | jq '.total')
 
     if (( num > 0 )); then
-        echo "$json" | jq -r '.issues[] | "\(.key)\t\(.fields.status.name)\t\(.fields.summary)"'
+        echo "$json" | jq -r '.issues[] | "\(.key)\t\(.fields.status.name)\t\(.fields.summary)\t\(.fields.assignee.displayName)\t\(.fields.priority.name)"'
     else
         echo "No JIRA tickets found"
     fi
@@ -263,8 +263,12 @@ outCve() {
 
         echo "                <td style='text-align: left;'>"
 
-        while IFS=$'\t' read -r id status text; do
-            echo "                    <a href='$JIRA_URL$id' target='_top'>$id</a> : <b>$status</b> : $text </br>"
+        while IFS=$'\t' read -r id status text assignee priority; do
+            if [[ $assignee == null ]]; then
+                assignee='Unassigned'
+            fi
+
+            echo "                    <a href='$JIRA_URL$id' target='_top'>$id</a> <b>$status</b> : <i>$priority</i> : <b>$assignee</b> $text</br>"
         done<<<"${tickets}"
         echo "                </td>"
 
