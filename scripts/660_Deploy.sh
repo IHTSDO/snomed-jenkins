@@ -10,9 +10,14 @@ deployToDockerHub() {
         if ((containsJib == 1)); then
             figlet -w 500 "Docker Hub"
             echo "Maven JIB configuration and on $GIT_BRANCH so deploying to DOCKERHUB"
-            echo "$DOCKER_HUB_PSW" | docker login -u "$DOCKER_HUB_USR" --password-stdin
-            mvn jib:build
-            echo "Docker hub deployment completed"
+
+            if [[ $HOST =~ prod-jenkins* ]]; then
+                echo "$DOCKER_HUB_PSW" | docker login -u "$DOCKER_HUB_USR" --password-stdin
+                mvn jib:build
+                echo "Docker hub deployment completed"
+            else
+                echo "Docker hub deployment only allowed from prod-jenkins"
+            fi
         fi
     fi
 }
@@ -43,21 +48,25 @@ performMavenDeployments() {
         echo "Build the debian package debian-${release_area}."
         mvn install -Pdeb -Dmaven.test.skip=true -Ddependency-check.skip=true
         # Is it there?
-        deb_pkg_count=$(find . -name "*.deb" -print -quit | wc -l)
+        deb_pkg_count=$(find . -type f -name "*.deb" -print | wc -l)
 
         if ((deb_pkg_count > 0)); then
-            echo "Deployable package exists"
-            deb_pkg=$(find . -name "*.deb" -print -quit)
+            echo "${deb_pkg_count} deployable package(s) exist"
 
-            if [[ -e ${deb_pkg} ]]; then
+            while read -r deb_pkg
+            do
                 echo "File to upload is: ${deb_pkg}"
 
                 # See example 7 here: https://www.jenkins.io/doc/book/pipeline/syntax/#environment
                 echo "curl -s -o /dev/null --write-out '%{http_code}\n' -u \"NEXUS_LOGIN_USR:NEXUS_LOGIN_PSW\" -X POST -H \"Content-Type: multipart/form-data\" --data-binary \"@${deb_pkg}\" \"https://nexus3.ihtsdotools.org/repository/debian-${release_area}/\""
+                deb_pkg_name=${deb_pkg/.\/}
+                if [[ $deb_pkg_name =~ ^target ]]; then
+                    deb_pkg_name=$SNOMED_PROJECT_NAME
+                fi
+                echo "Check: https://nexus3.ihtsdotools.org/#browse/browse:debian-${release_area}:packages%2F${deb_pkg_name:0:1}%2F${deb_pkg_name/\/*}"
 
                 if [[ $HOST =~ prod-jenkins* ]]; then
                     status=$(curl -s -o /dev/null --write-out '%{http_code}\n' -u "$NEXUS_LOGIN_USR:$NEXUS_LOGIN_PSW" -X POST -H "Content-Type: multipart/form-data" --data-binary "@${deb_pkg}" "https://nexus3.ihtsdotools.org/repository/debian-${release_area}/")
-                    echo "Check: https://nexus3.ihtsdotools.org/#browse/browse:debian-${release_area}:packages%2F${SNOMED_PROJECT_NAME:0:1}%2F${SNOMED_PROJECT_NAME}"
                     echo "Curl return status=${status}"
                     figlet -w 500 "${status}"
 
@@ -79,9 +88,7 @@ performMavenDeployments() {
                 else
                     echo "Can only deploy to nexus from prod-jenkins"
                 fi
-            else
-                echo "No debian package found to upload"
-            fi
+            done<<<"$(find . -type f -name "*.deb" -print)"
         else
             echo "No debian package built to upload"
         fi
