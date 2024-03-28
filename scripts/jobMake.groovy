@@ -83,7 +83,7 @@ spreadsheet.withReader { reader ->
 
             projectsEnabled[projectName] = 1
             noOfEnabledOfProjects++
-            makeMainPipelineJob(projectName, row)
+            makeJobs(projectName, row)
         }
     }
 
@@ -153,7 +153,7 @@ void makeFolders() {
     }
 }
 
-void makeMainPipelineJob(String projectName, def row) {
+void makeJobs(String projectName, def row) {
     String projectGroupArtifact = row."${COLUMN_GROUP_ARTIFACT}"
     String projectBuildTool = row."${COLUMN_BUILD_TOOL}".toLowerCase().capitalize()
     String projectLanguage = row."${COLUMN_LANGUAGE}".toLowerCase().capitalize()
@@ -188,8 +188,8 @@ void makeMainPipelineJob(String projectName, def row) {
     }
 
     // Setup Nightly Security jobs.
-    if (!projectLanguage.toLowerCase().startsWith("jdk")) {
-        println "    SKIPPING: cve / ${projectName} [ ${projectPipeLineType} ]"
+    if (!projectLanguage.toLowerCase().startsWith("jdk") || projectType.equalsIgnoreCase("bom")) {
+        println "    SKIPPING: cve job for ${projectName} [ ${projectPipeLineType} ]"
     } else {
         generateFreestyle(true, projectGitUri, projectName,  description, projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
     }
