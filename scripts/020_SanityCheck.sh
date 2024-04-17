@@ -2,6 +2,8 @@
 source "$SCRIPTS_PATH/000_Config.sh"
 figlet -w 500 "Sanity Check Project"
 
+LICENSE_FILE="LICENSE.md"
+
 mavenSanity() {
     if [[ -e pom.xml ]]; then
         # Required here to ensure that the pom.xml file includes the JaCoCo plugin prior to test.
@@ -16,6 +18,8 @@ mavenSanity() {
         echo "Missing pom.xml"
         exit 1
     fi
+
+    echo "Maven pom.xml exists."
 }
 
 gradleSanity() {
@@ -23,7 +27,29 @@ gradleSanity() {
         echo "Missing build.gradle"
         exit 1
     fi
+
+    echo "Gradle build.gradle exists."
 }
+
+checkLicense() {
+    if [[ ! -e "$LICENSE_FILE" ]]; then
+        echo "Missing $LICENSE_FILE"
+        exit 1
+    fi
+
+    CHKSUM=$(grep -v "Copyright .*, SNOMED International" "$LICENSE_FILE" | md5sum | awk '{print $1}')
+
+    if [[ "$CHKSUM" != "$LICENSE_EXPECTED_CHECK_SUM" ]]; then
+        echo "Invalid contents of $LICENSE_FILE"
+        echo "     Expected   : $LICENSE_EXPECTED_CHECK_SUM"
+        echo "     Calculated : $CHKSUM"
+        exit 1
+    fi
+
+    echo "$LICENSE_FILE file OK"
+}
+
+checkLicense
 
 case $SNOMED_PROJECT_BUILD_TOOL in
     maven)
