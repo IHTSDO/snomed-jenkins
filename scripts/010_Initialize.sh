@@ -10,9 +10,11 @@ echo "BUILD TOOL: ${SNOMED_PROJECT_BUILD_TOOL}"
 case $SNOMED_PROJECT_BUILD_TOOL in
     maven)
         mvn --version
+        mvn clean
         ;;
     gradle)
         gradle --version
+        gradle clean
         ;;
     none)
         echo "No build tool required."
