@@ -2,6 +2,8 @@
 source "$SCRIPTS_PATH/000_Config.sh"
 figlet -w 500 "CVE/Security Checks"
 
+set -e
+
 case $SNOMED_PROJECT_LANGUAGE in
     Cypress | Typescript | Javascript)
         echo "No security tool required."
