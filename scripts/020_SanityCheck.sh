@@ -1,8 +1,27 @@
 #!/usr/bin/env bash
 source "$SCRIPTS_PATH/000_Config.sh"
 figlet -w 500 "Sanity Check Project"
+set -e
 
 LICENSE_FILE="LICENSE.md"
+
+checkLicense() {
+    if [[ ! -e "$LICENSE_FILE" ]]; then
+        echo "Missing $LICENSE_FILE"
+        exit 1
+    fi
+
+    CHKSUM=$(grep -v "Copyright .*, SNOMED International" "$LICENSE_FILE" | md5sum | awk '{print $1}')
+
+    if [[ "$CHKSUM" != "$LICENSE_EXPECTED_CHECK_SUM" ]]; then
+        echo "Invalid contents of $LICENSE_FILE"
+        echo "     Expected   : $LICENSE_EXPECTED_CHECK_SUM"
+        echo "     Calculated : $CHKSUM"
+        exit 1
+    fi
+
+    echo "$LICENSE_FILE file OK"
+}
 
 mavenSanity() {
     if [[ -e pom.xml ]]; then
@@ -31,22 +50,23 @@ gradleSanity() {
     echo "Gradle build.gradle exists."
 }
 
-checkLicense() {
-    if [[ ! -e "$LICENSE_FILE" ]]; then
-        echo "Missing $LICENSE_FILE"
-        exit 1
+gitLeaksCheck() {
+    echo "--------------------------------------------------------------------------------"
+    echo "GitLeaks check"
+    GITLEAKS="gitleaks"
+
+    if [[ -e /opt/gitleaks/gitleaks ]]; then
+        GITLEAKS="/opt/gitleaks/gitleaks"
     fi
 
-    CHKSUM=$(grep -v "Copyright .*, SNOMED International" "$LICENSE_FILE" | md5sum | awk '{print $1}')
+    $GITLEAKS detect --source . -v || true
+}
 
-    if [[ "$CHKSUM" != "$LICENSE_EXPECTED_CHECK_SUM" ]]; then
-        echo "Invalid contents of $LICENSE_FILE"
-        echo "     Expected   : $LICENSE_EXPECTED_CHECK_SUM"
-        echo "     Calculated : $CHKSUM"
-        exit 1
-    fi
-
-    echo "$LICENSE_FILE file OK"
+checkText() {
+    TXT=$1
+    echo "--------------------------------------------------------------------------------"
+    echo "Searching for : $TXT"
+    grep -R -n --exclude-dir=target "$TXT" ./* || true
 }
 
 checkLicense
@@ -66,3 +86,13 @@ case $SNOMED_PROJECT_BUILD_TOOL in
         exit 1
         ;;
 esac
+
+figlet -w 500 "DevOps Checks"
+gitLeaksCheck
+
+checkText "ihtsdotools.org"
+checkText "snomedtools.org"
+checkText "sct2"
+checkText "der2"
+
+echo "Completed OK"
