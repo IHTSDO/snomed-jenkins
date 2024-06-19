@@ -60,7 +60,8 @@ gitLeaksCheck() {
         GITLEAKS="/opt/gitleaks/gitleaks"
     fi
 
-    $GITLEAKS -c "$GITLEAKSWHITELIST" detect --source . -v || true
+    # Add "|| true" to following line to allow builds to continue even if gitleaks finds an issue.
+    $GITLEAKS -c "$GITLEAKSWHITELIST" detect --source . -v
 }
 
 checkText() {
