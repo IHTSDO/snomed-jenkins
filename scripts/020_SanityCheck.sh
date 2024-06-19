@@ -4,6 +4,7 @@ figlet -w 500 "Sanity Check Project"
 set -e
 
 LICENSE_FILE="LICENSE.md"
+GITLEAKSWHITELIST="$SCRIPTS_PATH/../resources/gitleaks/gitleakrule.toml"
 
 checkLicense() {
     if [[ ! -e "$LICENSE_FILE" ]]; then
@@ -59,7 +60,7 @@ gitLeaksCheck() {
         GITLEAKS="/opt/gitleaks/gitleaks"
     fi
 
-    $GITLEAKS detect --source . -v || true
+    $GITLEAKS -c "$GITLEAKSWHITELIST" detect --source . -v || true
 }
 
 checkText() {

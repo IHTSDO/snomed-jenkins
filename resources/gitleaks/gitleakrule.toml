@@ -1,0 +1,22 @@
+title = "Snomed Gitleaks Rules"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "global allow list"
+
+regexes = [
+    '''^PASSWORD_CHANGE_ME$''',
+    '''^Password$''',
+    '''^XXXXXXXX$''',
+    '''^j_password$''',
+    '''^nothepassword$''',
+    '''^password$''',
+    '''^passwordResetUrl$''',
+    '''^username$''',
+    '''^yourPassword$''',
+    '''n=this.anchors.length-1''',
+    '''s=this.anchors.length-1''',
+    '''myApiKeyXXXX123456789'''
+]
