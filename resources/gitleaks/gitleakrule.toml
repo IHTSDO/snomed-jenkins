@@ -18,5 +18,7 @@ regexes = [
     '''^yourPassword$''',
     '''n=this.anchors.length-1''',
     '''s=this.anchors.length-1''',
-    '''myApiKeyXXXX123456789'''
+    '''myApiKeyXXXX123456789''',
+    '''-----BEGIN PRIVATE KEY-----";''',
+    '''-----END PRIVATE KEY-----";'''
 ]
