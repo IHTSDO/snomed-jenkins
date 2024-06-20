@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 LOC=$JENKINS_HOME/userContent
 CVE_TSV_FILE=$LOC/cveTable.tsv
-URL_BASE=https://jira.ihtsdotools.org/rest/api/2
+URL_BASE=https://jira.${SNOMED_TOOLS_URL}/rest/api/2
 CVE_URL=https://ossindex.sonatype.org/vulnerability
 PROJECT=PIP
+
+echo "SNOMED_TOOLS_URL = $SNOMED_TOOLS_URL"
 
 findCveTicket() {
     local cve=$1

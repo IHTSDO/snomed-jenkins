@@ -40,7 +40,7 @@ performMavenDeployments() {
         if [[ $HOST =~ prod-jenkins* ]]; then
             echo "Deploy to maven-${release_area}."
             mvn deploy -U -Dmaven.test.skip=true -Ddependency-check.skip=true \
-                -DaltDeploymentRepository=ihtsdo-public-nexus::default::https://nexus3.ihtsdotools.org/repository/maven-${release_area}/
+                -DaltDeploymentRepository=ihtsdo-public-nexus::default::https://nexus3.${SNOMED_TOOLS_URL}/repository/maven-${release_area}/
         else
             echo "Can only deploy to nexus from prod-jenkins"
         fi
@@ -58,15 +58,15 @@ performMavenDeployments() {
                 echo "File to upload is: ${deb_pkg}"
 
                 # See example 7 here: https://www.jenkins.io/doc/book/pipeline/syntax/#environment
-                echo "curl -s -o /dev/null --write-out '%{http_code}\n' -u \"NEXUS_LOGIN_USR:NEXUS_LOGIN_PSW\" -X POST -H \"Content-Type: multipart/form-data\" --data-binary \"@${deb_pkg}\" \"https://nexus3.ihtsdotools.org/repository/debian-${release_area}/\""
+                echo "curl -s -o /dev/null --write-out '%{http_code}\n' -u \"NEXUS_LOGIN_USR:NEXUS_LOGIN_PSW\" -X POST -H \"Content-Type: multipart/form-data\" --data-binary \"@${deb_pkg}\" \"https://nexus3.${SNOMED_TOOLS_URL}/repository/debian-${release_area}/\""
                 deb_pkg_name=${deb_pkg/.\/}
                 if [[ $deb_pkg_name =~ ^target ]]; then
                     deb_pkg_name=$SNOMED_PROJECT_NAME
                 fi
-                echo "Check: https://nexus3.ihtsdotools.org/#browse/browse:debian-${release_area}:packages%2F${deb_pkg_name:0:1}%2F${deb_pkg_name/\/*}"
+                echo "Check: https://nexus3.${SNOMED_TOOLS_URL}/#browse/browse:debian-${release_area}:packages%2F${deb_pkg_name:0:1}%2F${deb_pkg_name/\/*}"
 
                 if [[ $HOST =~ prod-jenkins* ]]; then
-                    status=$(curl -s -o /dev/null --write-out '%{http_code}\n' -u "$NEXUS_LOGIN_USR:$NEXUS_LOGIN_PSW" -X POST -H "Content-Type: multipart/form-data" --data-binary "@${deb_pkg}" "https://nexus3.ihtsdotools.org/repository/debian-${release_area}/")
+                    status=$(curl -s -o /dev/null --write-out '%{http_code}\n' -u "$NEXUS_LOGIN_USR:$NEXUS_LOGIN_PSW" -X POST -H "Content-Type: multipart/form-data" --data-binary "@${deb_pkg}" "https://nexus3.${SNOMED_TOOLS_URL}/repository/debian-${release_area}/")
                     echo "Curl return status=${status}"
                     figlet -w 500 "${status}"
 

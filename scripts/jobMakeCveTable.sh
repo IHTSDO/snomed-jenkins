@@ -4,8 +4,10 @@ CVE_TSV_FILE=$LOC/cveTable.tsv
 CVE_HTML_FILE=$LOC/cveTable.html
 CVE_URL=https://ossindex.sonatype.org/vulnerability
 BUILD_URL=$JENKINS_URL/job/cve/job
-JIRA_URL=https://jira.ihtsdotools.org/browse/
-URL_BASE=https://jira.ihtsdotools.org/rest/api/2
+JIRA_URL=https://jira.${SNOMED_TOOLS_URL}/browse/
+URL_BASE=https://jira.${SNOMED_TOOLS_URL}/rest/api/2
+
+echo "SNOMED_TOOLS_URL = $SNOMED_TOOLS_URL"
 
 findCveTickets() {
     local cve=$1

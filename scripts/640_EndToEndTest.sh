@@ -15,20 +15,20 @@ if [[ -d cypress ]]; then
 
         case $GIT_BRANCH in
             main | master)
-                echo "    \"URL_LOGIN\": \"https://uat-ims.ihtsdotools.org/#/login?serviceReferer=\","
-                echo "    \"URL_BROWSER\": \"https://uat-browser.ihtsdotools.org\","
-                echo "    \"URL_AUTHORING\": \"https://uat-authoring.ihtsdotools.org\","
-                echo "    \"URL_REPORTING\": \"https://uat-snowstorm.ihtsdotools.org/reporting/\","
-                echo "    \"URL_RAD\": \"https://uat-release.ihtsdotools.org/\","
-                echo "    \"URL_SIMPLEX\": \"https://uat-simplex.ihtsdotools.org/\""
+                echo "    \"URL_LOGIN\": \"https://uat-ims.${SNOMED_TOOLS_URL}/#/login?serviceReferer=\","
+                echo "    \"URL_BROWSER\": \"https://uat-browser.${SNOMED_TOOLS_URL}\","
+                echo "    \"URL_AUTHORING\": \"https://uat-authoring.${SNOMED_TOOLS_URL}\","
+                echo "    \"URL_REPORTING\": \"https://uat-snowstorm.${SNOMED_TOOLS_URL}/reporting/\","
+                echo "    \"URL_RAD\": \"https://uat-release.${SNOMED_TOOLS_URL}/\","
+                echo "    \"URL_SIMPLEX\": \"https://uat-simplex.${SNOMED_TOOLS_URL}/\""
                 ;;
             *)
-                echo "    \"URL_LOGIN\": \"https://dev-ims.ihtsdotools.org/#/login?serviceReferer=\","
-                echo "    \"URL_BROWSER\": \"https://dev-browser.ihtsdotools.org\","
-                echo "    \"URL_AUTHORING\": \"https://dev-authoring.ihtsdotools.org\","
-                echo "    \"URL_REPORTING\": \"https://dev-snowstorm.ihtsdotools.org/reporting/\","
-                echo "    \"URL_RAD\": \"https://dev-release.ihtsdotools.org/\","
-                echo "    \"URL_SIMPLEX\": \"https://dev-simplex.ihtsdotools.org/\""
+                echo "    \"URL_LOGIN\": \"https://dev-ims.${SNOMED_TOOLS_URL}/#/login?serviceReferer=\","
+                echo "    \"URL_BROWSER\": \"https://dev-browser.${SNOMED_TOOLS_URL}\","
+                echo "    \"URL_AUTHORING\": \"https://dev-authoring.${SNOMED_TOOLS_URL}\","
+                echo "    \"URL_REPORTING\": \"https://dev-snowstorm.${SNOMED_TOOLS_URL}/reporting/\","
+                echo "    \"URL_RAD\": \"https://dev-release.${SNOMED_TOOLS_URL}/\","
+                echo "    \"URL_SIMPLEX\": \"https://dev-simplex.${SNOMED_TOOLS_URL}/\""
                 ;;
         esac
 

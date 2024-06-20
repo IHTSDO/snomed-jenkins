@@ -3,7 +3,9 @@
 GIT_URL="https://api.github.com/repos/IHTSDO"
 API_VERSION="2022-11-28"
 API_KEY=${GIT_WEB_HOOK_CREATE_TOKEN}
-JENKINS_URL="https://jenkins.ihtsdotools.org/multibranch-webhook-trigger/invoke?token="
+JENKINS_URL="https://jenkins.${SNOMED_TOOLS_URL}/multibranch-webhook-trigger/invoke?token="
+
+echo "SNOMED_TOOLS_URL = $SNOMED_TOOLS_URL"
 
 getHook() {
     REPO=$1

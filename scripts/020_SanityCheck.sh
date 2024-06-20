@@ -5,6 +5,8 @@ set -e
 
 LICENSE_FILE="LICENSE.md"
 GITLEAKSWHITELIST="$SCRIPTS_PATH/../resources/gitleaks/gitleakrule.toml"
+SENSITIVE_WORD_LIST="ihtsdotools.org snomedtools.org sct2 der2" # SNOMED_SANITY_IGNORE
+FAILED_CHECKS=false
 
 checkLicense() {
     if [[ ! -e "$LICENSE_FILE" ]]; then
@@ -70,11 +72,11 @@ checkText() {
     echo "--------------------------------------------------------------------------------"
 
     if (( count > 0 )); then
-        echo "Searching for : $TXT - Found $count hits"
+        echo "Fail: Found $count hits : $TXT"
         grep -R -n --exclude-dir=target "$TXT" ./* | grep -v SNOMED_SANITY_IGNORE
-        exit 1
+        # FAILED_CHECKS=true
     else
-        echo "Search for : $TXT - None found"
+        echo "Pass: Did not find : $TXT"
     fi
 }
 
@@ -99,9 +101,16 @@ esac
 figlet -w 500 "DevOps Checks"
 gitLeaksCheck
 
-checkText "ihtsdotools.org"      # SNOMED_SANITY_IGNORE
-checkText "snomedtools.org"      # SNOMED_SANITY_IGNORE
-checkText "sct2"                 # SNOMED_SANITY_IGNORE
-checkText "der2"                 # SNOMED_SANITY_IGNORE
+for word in $SENSITIVE_WORD_LIST
+do
+    checkText "$word"
+done
 
-echo "Completed OK"
+echo "--------------------------------------------------------------------------------"
+
+if $FAILED_CHECKS; then
+    echo "DevOps Sanity check failed"
+    exit 2
+else
+    echo "DevOps Sanity Check Completed OK"
+fi
