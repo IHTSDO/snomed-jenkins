@@ -38,7 +38,7 @@ fi
 # From spreadsheet get the row for project and convert each column to a variable.
 IFS="/" read -r -a JOBARR <<< "$JOB_NAME"
 PROJNAME=${JOBARR[1]}
-line=$(grep -i "^\"TRUE\",\"$PROJNAME\"" "${SPREADSHEET_FILE_NAME}" | head -1)
+line=$(grep -i -E "^\"(TRUE|FALSE)\",\"$PROJNAME\"" "${SPREADSHEET_FILE_NAME}" | head -1)
 IFS="," read -r -a LINEARR <<< "$line"
 
 SNOMED_PROJECT_ACTIVE=$(fixStr "${LINEARR[0]}")

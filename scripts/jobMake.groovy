@@ -14,6 +14,7 @@ def envVars = Jenkins.instance.getGlobalNodeProperties()[0].getEnvVars()
 BASEFOLDER = "/tmp/"
 SPREADSHEET_FILE_NAME = "${BASEFOLDER}ProjectsDSL.csv"
 SPREADSHEET_URL = envVars["SNOMED_SPREADSHEET_URL"]
+SNOMED_TOOLS_URL = envVars["SNOMED_TOOLS_URL"]
 SPREADSHEET = "${SPREADSHEET_URL}/gviz/tq?tqx=out:csv"
 DOWNLOAD = true
 
@@ -43,7 +44,7 @@ BANNER_MESSAGE = "Automated build pipeline job, if you edit this pipeline your c
 GIT_HUB_CREDENTIALS_ID = '375fc783-9b0d-48be-a251-af24d82922bb'
 
 String hostname = InetAddress.getLocalHost().getHostName()
-onProd=hostname.equalsIgnoreCase("prod-jenkins.ihtsdotools.org")
+onProd=hostname.equalsIgnoreCase("prod-jenkins." + SNOMED_TOOLS_URL)
 println "Hostname : ${hostname} (Prod?=${onProd})"
 
 File spreadsheet = new File(SPREADSHEET_FILE_NAME)
@@ -167,7 +168,7 @@ void makeJobs(String projectName, def row) {
     String projectNotes = row."${COLUMN_NOTES}"
     String projectSrcUrl = new String("https://github.com/IHTSDO/${projectName}")
     String projectGitUri = new String("git@github.com:IHTSDO/${projectName}.git")
-    String projectNexusUrl = new String("https://nexus3.ihtsdotools.org/#browse/browse:debian-snapshots:packages%2Fs%2F${projectGroupArtifact}")
+    String projectNexusUrl = new String("https://nexus3.${SNOMED_TOOLS_URL}/#browse/browse:debian-snapshots:packages%2Fs%2F${projectGroupArtifact}")
     String cveTableUrl = "/userContent/cveTable.html"
     // This needs to be constant so cannot be a UUID!
     String nameMd5Token = MessageDigest.getInstance("SHA256").digest(projectName.bytes).encodeHex().toString()
