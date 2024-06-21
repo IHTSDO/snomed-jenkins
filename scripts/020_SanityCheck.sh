@@ -5,7 +5,7 @@ set -e
 
 LICENSE_FILE="LICENSE.md"
 GITLEAKSWHITELIST="$SCRIPTS_PATH/../resources/gitleaks/gitleakrule.toml"
-SENSITIVE_WORD_LIST="ihtsdotools.org snomedtools.org sct2 der2" # SNOMED_SANITY_IGNORE
+SENSITIVE_WORD_LIST="ihtsdotools.org snomedtools.org sct2 der2 gitleaks:allow" # SNOMED_SANITY_IGNORE
 FAILED_CHECKS=false
 
 checkLicense() {
