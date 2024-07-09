@@ -21,5 +21,6 @@ regexes = [
     '''myApiKeyXXXX123456789''',
     '''-----BEGIN PRIVATE KEY-----";''',
     '''-----END PRIVATE KEY-----";''',
-    '''WyJmb28iLCJiYXIiXQ=='''# A hashed concept id, used for Snowstorm search-after pagination testing
+    '''WyJmb28iLCJiYXIiXQ==''', # A hashed concept id, used for Snowstorm search-after pagination testing
+    '''[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}''' # UUID from RF2 release files
 ]
