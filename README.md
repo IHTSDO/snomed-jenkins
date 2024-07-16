@@ -3,6 +3,7 @@
 <!-- TOC -->
 * [Snomed Jenkins - A fully automated CI/CD pipeline implementation](#snomed-jenkins---a-fully-automated-cicd-pipeline-implementation)
 * [Summary](#summary)
+  * [What each step does](#what-each-step-does)
 * [Configuration](#configuration)
   * [Master Code Estate Spreadsheet](#master-code-estate-spreadsheet)
     * [Spreadsheet column and in column delimiters](#spreadsheet-column-and-in-column-delimiters)
@@ -20,8 +21,8 @@
     * [jobMake.groovy](#jobmakegroovy)
 * [How to test and update the scripts](#how-to-test-and-update-the-scripts)
 * [Jenkins Plugins](#jenkins-plugins)
-* [Credentials:](#credentials)
-* [Linux box libraries installed:](#linux-box-libraries-installed)
+* [Credentials](#credentials)
+* [Linux box libraries installed](#linux-box-libraries-installed)
 * [GITHUB authentication](#github-authentication)
 <!-- TOC -->
 
@@ -77,6 +78,25 @@ In summary:
 * These jobs look after themselves.
 * Each job runs within a pipeline, the pipeline contains a series of steps, the actions performed by a step and dictated
   by the shell scripts located in the `scripts` folder.
+
+## What each step does
+Depending on the pipeline the shell scripts for each step do the following tasks.
+
+* [000_Config.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/000_Config.sh) - Used by steps below to get config of project from spreadsheet.
+* [010_Initialize.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/010_Initialize.sh) - Check gradle/maven version and output `set`.
+* [020_SanityCheck.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/020_SanityCheck.sh) - Check for license file, if a maven project there is a pom, run [gitleaks](https://github.com/gitleaks/gitleaks) and so on.
+* [500_Build.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/500_Build.sh) - Use the build tool maven/gradle to build the project.
+* [510_Test.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/510_Test.sh) - Run unit tests.
+* [600_Security.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/600_Security.sh) - Run [OWASP dependency check](https://owasp.org/www-project-dependency-check/).
+* [610_Documentation.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/610_Documentation.sh) - Use [Doxygen](https://www.doxygen.nl/) to generate code documentation.
+* [620_Performance.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/620_Performance.sh) - Run performance tests.
+* [630_Quality.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/630_Quality.sh) - Generate code coverage report with [Jacoco](https://www.jacoco.org/jacoco/).
+* [640_EndToEndTest.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/640_EndToEndTest.sh) - Run [Cypress](https://www.cypress.io) end to end tests.
+* [650_Audit.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/650_Audit.sh) - Run code quality with [SonarQube](https://www.sonarsource.com/products/sonarqube/).
+* [660_Deploy.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/660_Deploy.sh) - Deploy to nexus and if the project is configured with [maven/jib plugin](https://github.com/GoogleContainerTools/jib) to dockerhub.
+* [800_TriggerDownstream.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/800_TriggerDownstream.sh) - Start any downstream projects.
+* [900_Cleanup.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/900_Cleanup.sh) - Save disc space on jenkins if needed.
+* [950_SelectCommsChannel.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/950_SelectCommsChannel.sh) - Library used by pipelines to send messages to the correct destination.
 
 # Configuration
 
@@ -387,13 +407,13 @@ The following is a list of the plugins we use in our Jenkins instance.
 }
 ```
 
-# Credentials:
+# Credentials
 
 * These are all setup here: https://YOUR_JENKINS_HOST/manage/credentials/ - access is restricted.
 * You can see in the pipelines how these are passed
 * The shell scripts and pipelines use these secrets to perform their tasks.
 
-# Linux box libraries installed:
+# Linux box libraries installed
 
 * JDK* - 11 and 17 for example, depending on your source.
 * [doxygen](https://cheat.sh/doxygen)
