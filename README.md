@@ -94,6 +94,10 @@ Depending on the pipeline the shell scripts for each step do the following tasks
 * [640_EndToEndTest.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/640_EndToEndTest.sh) - Run [Cypress](https://www.cypress.io) end to end tests.
 * [650_Audit.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/650_Audit.sh) - Run code quality with [SonarQube](https://www.sonarsource.com/products/sonarqube/).
 * [660_Deploy.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/660_Deploy.sh) - Deploy to nexus and if the project is configured with [maven/jib plugin](https://github.com/GoogleContainerTools/jib) to dockerhub.
+  * Note that the deployment location depends on the branch name:
+    * If branch name is `master`/`main`/`release-candidate` artifact is deployed to `releases`
+    * If branch name is `develop` or ends in `nexus` the artifact is deployed to `snapshots`
+  * __Branches with any other name are NOT deployed to nexus__.
 * [800_TriggerDownstream.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/800_TriggerDownstream.sh) - Start any downstream projects.
 * [900_Cleanup.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/900_Cleanup.sh) - Save disc space on jenkins if needed.
 * [950_SelectCommsChannel.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/950_SelectCommsChannel.sh) - Library used by pipelines to send messages to the correct destination.
