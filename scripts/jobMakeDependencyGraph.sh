@@ -277,7 +277,12 @@ processPom() {
             depAid=$(echo "$dep" | cut -d: -f2)
             depProjectName="${projectMap["$dep"]}"
             toLink=$(makeLink "$depGid" "$depAid" "$depProjectName" "$dep")
-            echo "    $fromLink -> $toLink [color=$linkcol]"
+
+            if [[ "${gId}__${projectName}" == "${depGid}__${depProjectName}" ]]; then
+                echo "        // Self link: $fromLink -> $toLink [color=$linkcol]"
+            else
+                echo "    $fromLink -> $toLink [color=$linkcol]"
+            fi
         fi
     done
 
