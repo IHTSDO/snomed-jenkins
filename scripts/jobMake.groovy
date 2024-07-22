@@ -36,6 +36,9 @@ COLUMN_NOTES = "Notes"
 FOLDER_JOBS='jobs'
 FOLDER_CVE='cve'
 FOLDER_E2E='e2e'
+FOLDER_E2E_UAT='e2euat'
+
+enum JobTypes {cve, e2eDev, e2eUat}
 
 //NUMBER_OF_JOBS_TO_KEEP = 5
 //NUMBER_OF_DAYS_TO_KEEP = 5
@@ -58,10 +61,12 @@ if (onProd) {
     HOOK_FILE.write("")
     NIGHTLY_TRIGGER_CVE = "H 5 * * 1-5"
     NIGHTLY_TRIGGER_E2E = "H H(6-8) * * 1-5"
+    MANUAL_TRIGGER_E2E = ""
 } else {
     println "NOT on production"
     NIGHTLY_TRIGGER_CVE = ""
     NIGHTLY_TRIGGER_E2E = ""
+    MANUAL_TRIGGER_E2E = ""
 }
 
 spreadsheet.withReader { reader ->
@@ -152,6 +157,18 @@ void makeFolders() {
 </div>
 """)
     }
+
+    folder(FOLDER_E2E_UAT) {
+        displayName('Manual Builds of Main/Master E2E')
+        description("""
+<div style="border-radius:25px;border:5px solid gray;padding:10px;background:#07AAE0;">
+    <font style="color:white;font-size:30px;">Manual Builds - Main/Master is built on demand to Cypress E2E tests</font><br/>
+    <font style="font-family:'Courier New';color:black;font-size:20px;">
+       <a href="${SPREADSHEET_URL}"><font style="color:white;">Spreadsheet</font></a>
+    </font>
+</div>
+""")
+    }
 }
 
 void makeJobs(String projectName, def row) {
@@ -192,14 +209,15 @@ void makeJobs(String projectName, def row) {
     if (!projectLanguage.toLowerCase().startsWith("jdk") || projectType.equalsIgnoreCase("bom")) {
         println "    SKIPPING: cve job for ${projectName} [ ${projectPipeLineType} ]"
     } else {
-        generateFreestyle(true, projectGitUri, projectName,  description, projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
+        generateFreestyle(JobTypes.cve, projectGitUri, projectName,  description, projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
     }
 
     // Setup E2E jobs.
     if (!projectLanguage.toLowerCase().startsWith("typescript")) {
         println "    SKIPPING: e2e / ${projectName} [ ${projectPipeLineType} ]"
     } else {
-        generateFreestyle(false, projectGitUri, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
+        generateFreestyle(JobTypes.e2eDev, projectGitUri, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
+        generateFreestyle(JobTypes.e2eUat, projectGitUri, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
     }
 }
 
@@ -266,28 +284,51 @@ String generatePipeline(String folder, String suffix, String includeBranches, St
     }
 }
 
-String generateFreestyle(boolean cveProject, String projectGitUri, String projectName, String desc, String projectBuildTool, String projectLanguage, String projectSlackChannel, String projectNotifiedUsers) {
-    String includeBranches="develop"
-    String folder = FOLDER_E2E
-    String suffix="_E2E"
-    String cronExpression= NIGHTLY_TRIGGER_E2E
-    String slackSubject = "E2E testing"
-    GString commandStr="""$SCRIPTS_PATH/010_Initialize.sh
+String generateFreestyle(JobTypes jobType, String projectGitUri, String projectName, String desc, String projectBuildTool, String projectLanguage, String projectSlackChannel, String projectNotifiedUsers) {
+    String includeBranches
+    String folder
+    String suffix
+    String cronExpression
+    String slackSubject
+    GString commandStr
+
+    switch (jobType) {
+        case JobTypes.cve:
+            includeBranches = "develop"
+            folder = FOLDER_CVE
+            suffix = "_CVE"
+            cronExpression = NIGHTLY_TRIGGER_CVE
+            slackSubject = "Security CVE test"
+            commandStr = """$SCRIPTS_PATH/010_Initialize.sh
+$SCRIPTS_PATH/020_SanityCheck.sh
+$SCRIPTS_PATH/600_Security.sh"""
+            println "    CREATING: ${folder} / ${projectName} (cron='${cronExpression}')"
+            break
+        case JobTypes.e2eDev:
+            includeBranches = "develop"
+            folder = FOLDER_E2E
+            suffix = "_E2E"
+            cronExpression = NIGHTLY_TRIGGER_E2E
+            slackSubject = "E2E testing Dev"
+            commandStr = """$SCRIPTS_PATH/010_Initialize.sh
 $SCRIPTS_PATH/020_SanityCheck.sh
 $SCRIPTS_PATH/500_Build.sh
 $SCRIPTS_PATH/640_EndToEndTest.sh"""
-
-    if (cveProject) {
-        folder = FOLDER_CVE
-        suffix="_CVE"
-        cronExpression= NIGHTLY_TRIGGER_CVE
-        slackSubject = "Security CVE test"
-        commandStr="""$SCRIPTS_PATH/010_Initialize.sh
+            println "    CREATING: ${folder} / ${projectName} (cron='${cronExpression}')"
+            break
+        case JobTypes.e2eUat:
+            includeBranches = ":^(master|main)\$"
+            folder = FOLDER_E2E_UAT
+            suffix = "_E2E_MAIN"
+            cronExpression = MANUAL_TRIGGER_E2E
+            slackSubject = "E2E testing UAT"
+            commandStr = """$SCRIPTS_PATH/010_Initialize.sh
 $SCRIPTS_PATH/020_SanityCheck.sh
-$SCRIPTS_PATH/600_Security.sh"""
+$SCRIPTS_PATH/500_Build.sh
+$SCRIPTS_PATH/640_EndToEndTest.sh"""
+            println "    CREATING: ${folder} / ${projectName} (Manual)"
+            break
     }
-
-    println "    CREATING: ${folder} / ${projectName} (cron='${cronExpression}')"
 
     // https://jenkinsci.github.io/job-dsl-plugin/#path/freeStyleJob
     freeStyleJob("${folder}/${projectName}") {
@@ -327,13 +368,13 @@ $SCRIPTS_PATH/600_Security.sh"""
         }
 
         publishers {
-            if (cveProject) {
+            if (jobType == JobTypes.cve) {
                 dependencyCheck('**/target/dependency-check-report.xml')
             }
 
             htmlPublisher {
                 reportTargets {
-                    if (cveProject) {
+                    if (jobType == JobTypes.cve) {
                         htmlPublisherTarget {
                             reportName('CVE-Dependency Check Report Details')
                             reportDir('.')

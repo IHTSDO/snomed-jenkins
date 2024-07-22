@@ -9,10 +9,13 @@ if [[ -d cypress ]]; then
     {
         echo "{"
 
+        # Populate cypress config file with any TEST_* variables,
+        # see https://JENKINS_URL/manage/configure "Global properties" section (You need jenkins admin permission to see/edit these).
         while read -r key value; do
             echo "    \"$key\": \"$value\","
         done <<< "$(set | grep "^TEST_" | sed -e 's/=/\t/' -e "s/\t'/\t/" -e "s/'$//" | cut -f 1,2)"
 
+        # Populate config file with URLS depending on branch. main/master = UAT, others = DEV.
         case $GIT_BRANCH in
             main | master)
                 echo "    \"URL_LOGIN\": \"https://uat-ims.${SNOMED_TOOLS_URL}/#/login?serviceReferer=\","
