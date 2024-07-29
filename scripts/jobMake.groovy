@@ -317,7 +317,7 @@ $SCRIPTS_PATH/640_EndToEndTest.sh"""
             println "    CREATING: ${folder} / ${projectName} (cron='${cronExpression}')"
             break
         case JobTypes.e2eUat:
-            includeBranches = ":^(master|main)\$"
+            includeBranches = "*/master,*/main"
             folder = FOLDER_E2E_UAT
             suffix = "_E2E_MAIN"
             cronExpression = MANUAL_TRIGGER_E2E
