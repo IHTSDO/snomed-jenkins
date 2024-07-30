@@ -8,6 +8,7 @@
   * [Master Code Estate Spreadsheet](#master-code-estate-spreadsheet)
     * [Spreadsheet column and in column delimiters](#spreadsheet-column-and-in-column-delimiters)
   * [Environment variables](#environment-variables)
+* [Docker](#docker)
 * [Architecture](#architecture)
   * [Jenkins Pipelines](#jenkins-pipelines)
     * [Build step:](#build-step)
@@ -157,6 +158,12 @@ The environment variables are located here: https://YOUR_JENKINS_HOST/manage/con
 | SNOMED_TOOLS_URL           | `SOME_URL`                                                 | Used to link systems together.                                                                                                                    |
 | SONAR_URL                  | `https://YOUR_SONAR_HOST/`                                 | SonarQube host URL.                                                                                                                               |
 | VERBOSE                    | `true`/`false`                                             | Slightly more output from jobs, for example see [010_Initialize.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/010_Initialize.sh) |
+
+# Docker
+
+This project contains a subfolder for a local installation of Jenkins and SonarQube.
+This enables you to run Jenkins locally to perform builds and test any changes you may wish to try.
+Find the documentation in this [README.md](docker/README.md).
 
 # Architecture
 
