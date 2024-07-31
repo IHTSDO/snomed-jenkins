@@ -54,6 +54,13 @@ On my machine this setting is in my `~/.zshrc` file:
 export SNOMED_DATA=${HOME}/Data
 ```
 
+The following command should return the expected result,
+if not you may have to restart your session for this variable to be loaded:
+
+```shell
+echo $SNOMED_DATA
+```
+
 # Copy setup files from live jenkins
 
 * First Check what is there, there might be an old back you want to use, and ignore the next step.
@@ -61,6 +68,9 @@ export SNOMED_DATA=${HOME}/Data
 ```shell
 ssh jenkins "ls -l *.zip"
 ```
+
+> If you cannot ssh onto your jenkins machine you can either request access and test with the above command.
+> Or you can get the zip files from someone else and skip this section, going straight to [Install live files locally](#install-live-files-locally)
 
 Make zips of key folders/files from live.
 
