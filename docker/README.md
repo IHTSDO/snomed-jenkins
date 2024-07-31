@@ -38,9 +38,12 @@ The following steps will create a locally running jenkins server, which mirrors 
 
 # Jenkins configuration volume
 
-To ease configuration these instructions use a shared volume.
+To ease configuration, these instructions use a shared volume.
 This local folder is used to store all of the jenkins configuration,
 and is shared with the docker image, via docker's volume mechanism.
+
+Once you have this location setup, keep it.
+It will enable you to keep your full local jenkins setup and status safe, regardless of the docker image.
 
 Add the following to your .bashrc or .bash_profile:
 
@@ -85,12 +88,12 @@ ssh jenkins "cd /var/lib/jenkins; zip ~/xml.zip *.xml"
 ssh jenkins "cd /var/lib/jenkins;zip -r ~/plugins.zip plugins"
 ```
 
-* Images etc
+* Copy the images etc
 ```shell
 ssh jenkins "cd /var/lib/jenkins;zip -r ~/userContent.zip userContent"
 ```
 
-* Starter projects
+* Copy the starter projects:
 ```shell
 ssh jenkins "cd /var/lib/jenkins;zip -r ~/jobClean.zip jobs/_CleanSpreadsheetCache_"
 ```
@@ -148,9 +151,11 @@ unzip jobCreate.zip -d $SNOMED_DATA/jenkins_home/
 
 # Changes once the configuration is transferred—IMPORTANT
 
-You now need to add this docker machine access to github in your personal github account see [GITHUB authentication](../README.md/#github-authentication)
+* You now need to add this docker machine access to github in your personal github account see [GITHUB authentication](../README.md/#github-authentication)
 
 From now on keep a safe copy of the `${SNOMED_DATA}/jenkins_home/.ssh` folder. If you rebuild the docker image, just copy this back and access will be restored.
+Basically keep the `.ssh` folder safe,
+it contains the private and public keys, which you have created and shared with github.
 
 * You have to change the URL in the config to point to your local machine:
 ```shell
@@ -162,11 +167,11 @@ sed -i 's/jenkinsUrl>http.*</jenkinsUrl>http:\/\/localhost:8083\/</' ${SNOMED_DA
 sed -i 's/useSecurity>true/useSecurity>false/' ${SNOMED_DATA}/jenkins_home/config.xml
 ```
 
-* Change sonar to use local version.
+* Change jenkins to use the local docker version or Sonar.
 ```shell
-sed -i 's/https:\/\/sonarqube.*org/http:\/\/172.17.0.1:9000/g' config.xml
-sed -i 's/https:\/\/sonarqube.*org/http:\/\/172.17.0.1:9000/g' hudson.plugins.sidebar_link.SidebarLinkPlugin.xml
-sed -i 's/https:\/\/sonarqube.*org/http:\/\/172.17.0.1:9000/g' hudson.plugins.sonar.SonarGlobalConfiguration.xml
+sed -i 's/https:\/\/sonarqube.*org/http:\/\/172.17.0.1:9000/g' ${SNOMED_DATA}/jenkins_home/config.xml
+sed -i 's/https:\/\/sonarqube.*org/http:\/\/172.17.0.1:9000/g' ${SNOMED_DATA}/jenkins_home/hudson.plugins.sidebar_link.SidebarLinkPlugin.xml
+sed -i 's/https:\/\/sonarqube.*org/http:\/\/172.17.0.1:9000/g' ${SNOMED_DATA}/jenkins_home/hudson.plugins.sonar.SonarGlobalConfiguration.xml
 ```
 
 Later you will start a sonar server and copy over its token so the jenkins and sonar machines talk to one another.
@@ -225,7 +230,6 @@ Jenkins.instance.queue.clear()
 ```
 
 # Useful docker commands to manage your local install
-
 
 * Start Jenkins
 

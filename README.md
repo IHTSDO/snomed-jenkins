@@ -440,15 +440,24 @@ The following is a list of the plugins we use in our Jenkins instance.
 
 # GITHUB authentication
 
-Github required a key for access, this was created and used as follows:
+Github requires a key for access, this can be created as follows:
 
-* Create of ed25519 SSH key pair
+* Create the key pair using:
 
 ```bash
-ssh-keygen -t ed25519
+`ssh-keygen -t ed25519`
 ```
+* This will create some files in your `~/.ssh` folder: `id_ed25519` and `id_ed25519.pub`.
+* Add the public key to github.
+* Copy both files to the `.ssh` folder on jenkins.
+* To test access do the following:
+```shell
+mkdir tmpfolder
+cd tmpfolder
+git clone git@github.com:IHTSDO/snomed-jenkins.git
+cd ..
+rm -ef tmpfolder
+```
+* This will test repo download but also add/create a `~/.ssh/known_hosts` file.
 
-* Add public key to github
-* Add private key to Jenkins credentials
-* Then on command line as jenkins download a repo and accept the fingerprint, this will create a `known_hosts` file in
-  the `.ssh` directory.
+Jenkins should now have access to github.
