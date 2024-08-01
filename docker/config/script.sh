@@ -10,6 +10,12 @@ echo "- - - - - - - - - - - - - - - - - - - - Git"
 apt-get install -y git
 echo "- - - - - - - - - - - - - - - - - - - - Maven"
 apt-get install -y maven
+echo "- - - - - - - - - - - - - - - - - - - - bc"
+apt-get install -y bc
+echo "- - - - - - - - - - - - - - - - - - - - jq"
+apt-get install -y jq
+echo "- - - - - - - - - - - - - - - - - - - - Imagemagick"
+apt-get install -y imagemagick
 echo "- - - - - - - - - - - - - - - - - - - - Graphviz"
 apt-get install -y graphviz
 echo "- - - - - - - - - - - - - - - - - - - - Gradle"

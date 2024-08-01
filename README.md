@@ -4,6 +4,7 @@
 * [Snomed Jenkins - A fully automated CI/CD pipeline implementation](#snomed-jenkins---a-fully-automated-cicd-pipeline-implementation)
 * [Summary](#summary)
   * [What each step does](#what-each-step-does)
+* [Useful URL's](#useful-urls)
 * [Configuration](#configuration)
   * [Master Code Estate Spreadsheet](#master-code-estate-spreadsheet)
     * [Spreadsheet column and in column delimiters](#spreadsheet-column-and-in-column-delimiters)
@@ -25,6 +26,10 @@
 * [Credentials](#credentials)
 * [Linux box libraries installed](#linux-box-libraries-installed)
 * [GITHUB authentication](#github-authentication)
+* [Useful/Common tasks](#usefulcommon-tasks)
+  * [Allow plugins to provide images/fonts etc](#allow-plugins-to-provide-imagesfonts-etc)
+  * [How to update Jenkins version](#how-to-update-jenkins-version)
+  * [How to update plugins](#how-to-update-plugins)
 <!-- TOC -->
 
 This project contains all code for the Jenkins build pipelines for Snomed CT,
@@ -102,6 +107,27 @@ Depending on the pipeline the shell scripts for each step do the following tasks
 * [800_TriggerDownstream.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/800_TriggerDownstream.sh) - Start any downstream projects.
 * [900_Cleanup.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/900_Cleanup.sh) - Save disc space on jenkins if needed.
 * [950_SelectCommsChannel.sh](https://github.com/IHTSDO/snomed-jenkins/blob/main/scripts/950_SelectCommsChannel.sh) - Library used by pipelines to send messages to the correct destination.
+
+# Useful URL's
+
+Common/useful URL's these will work for local docker installations.
+* Replace `http://localhost:9000` with the URL of your sonar server.
+* Replace `http://localhost:8083` with the URL of your jenkins server.
+
+| Description                                  | URL                                                                                                                                                              |
+|----------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| http://localhost:9000/                       | Sonar Qube                                                                                                                                                       |
+| http://localhost:8083/                       | Jenkins                                                                                                                                                          |
+| http://localhost:8083/manage/                | Jenkins management screens.                                                                                                                                      |
+| http://localhost:8083/manage/configureTools/ | Tools configuration, git, java etc.                                                                                                                              |
+| http://localhost:8083/configure              | This URL is used for configuring the Jenkins environment.                                                                                                        |
+| http://localhost:8083/computer               | This URL shows the agents that are connected to the Jenkins system.                                                                                              |
+| http://localhost:8083/restart                | This URL is used to restart Jenkins when it is safe to do so. Jenkins will not restart until running jobs are complete. This requires the "Safe Restart" plugin. |
+| http://localhost:8083/safeRestart            | This URL is used to safely restart Jenkins in a manner similar to /restart. It also requires the "Safe Restart" plugin.                                          |
+| http://localhost:8083/quietDown              | This URL is used to put Jenkins in a "Quiet Down" mode. In this mode, no new build jobs are started.                                                             |
+| http://localhost:8083/cancelQuietDown        | Stops quiet down mode                                                                                                                                            |
+| http://localhost:8083/exit                   | Forces Jenkins to quit. Use with caution as it does not wait for build jobs to complete and may result in data loss.                                             |
+| http://localhost:8083/script                 | This URL is for running Groovy scripts inside Jenkins, often used for administrative purposes.                                                                   |
 
 # Configuration
 
@@ -461,3 +487,40 @@ rm -ef tmpfolder
 * This will test repo download but also add/create a `~/.ssh/known_hosts` file.
 
 Jenkins should now have access to github.
+
+# Useful/Common tasks
+
+## Allow plugins to provide images/fonts etc
+
+Jenkins will block some content from being shared, you can tell this as images, icons pages may be missing.
+If this happens you may need to allow this content to be served from Jenkins.
+To allow this go do the script console: http://localhost:8083/manage/script  Paste the following snippet and run it.
+
+```groovy
+System.setProperty("hudson.model.DirectoryBrowserSupport.CSP",
+"""
+    default-src * 'unsafe-inline';
+    script-src  * 'unsafe-inline' 'unsafe-eval';
+    connect-src * 'unsafe-inline';
+    font-src    * data: blob: 'unsafe-inline';
+    img-src     * data: blob: 'unsafe-inline';
+    child-src   * data: blob: 'unsafe-inline';
+    style-src   * 'unsafe-inline';
+    object-src  * 'unsafe-inline';
+""")
+```
+
+For more information see: https://www.jenkins.io/doc/book/security/configuring-content-security-policy/
+
+## How to update Jenkins version
+
+Ask DevOps to do this the download and instructions are here: https://www.jenkins.io/download/
+
+## How to update plugins
+
+To update the plugins on jenkins:
+
+1) Visit: http://localhost:8083/manage/pluginManager/
+2) Select all the plugins you want to update.
+3) Click **update** and the restart link.
+4) You may need to manually restart jenkins using this link http://localhost:8083/restart, or on rare occasions ask DevOps to restart the machine.
