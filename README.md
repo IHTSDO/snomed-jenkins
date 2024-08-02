@@ -114,20 +114,23 @@ Common/useful URL's these will work for local docker installations.
 * Replace `http://localhost:9000` with the URL of your sonar server.
 * Replace `http://localhost:8083` with the URL of your jenkins server.
 
-| Description                                  | URL                                                                                                                                                              |
-|----------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| http://localhost:9000/                       | Sonar Qube                                                                                                                                                       |
-| http://localhost:8083/                       | Jenkins                                                                                                                                                          |
-| http://localhost:8083/manage/                | Jenkins management screens.                                                                                                                                      |
-| http://localhost:8083/manage/configureTools/ | Tools configuration, git, java etc.                                                                                                                              |
-| http://localhost:8083/configure              | This URL is used for configuring the Jenkins environment.                                                                                                        |
-| http://localhost:8083/computer               | This URL shows the agents that are connected to the Jenkins system.                                                                                              |
-| http://localhost:8083/restart                | This URL is used to restart Jenkins when it is safe to do so. Jenkins will not restart until running jobs are complete. This requires the "Safe Restart" plugin. |
-| http://localhost:8083/safeRestart            | This URL is used to safely restart Jenkins in a manner similar to /restart. It also requires the "Safe Restart" plugin.                                          |
-| http://localhost:8083/quietDown              | This URL is used to put Jenkins in a "Quiet Down" mode. In this mode, no new build jobs are started.                                                             |
-| http://localhost:8083/cancelQuietDown        | Stops quiet down mode                                                                                                                                            |
-| http://localhost:8083/exit                   | Forces Jenkins to quit. Use with caution as it does not wait for build jobs to complete and may result in data loss.                                             |
-| http://localhost:8083/script                 | This URL is for running Groovy scripts inside Jenkins, often used for administrative purposes.                                                                   |
+| Description                                                | URL                                                                                                                                                              |
+|------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| http://localhost:9000/                                     | Sonar Qube                                                                                                                                                       |
+| http://localhost:8083/                                     | Jenkins                                                                                                                                                          |
+| http://localhost:8083/manage/                              | Jenkins management screens.                                                                                                                                      |
+| http://localhost:8083/manage/configureTools/               | Tools configuration, git, java etc.                                                                                                                              |
+| http://localhost:8083/configure                            | This URL is used for configuring the Jenkins environment.                                                                                                        |
+| http://localhost:8083/computer                             | This URL shows the agents that are connected to the Jenkins system.                                                                                              |
+| http://localhost:8083/restart                              | This URL is used to restart Jenkins when it is safe to do so. Jenkins will not restart until running jobs are complete. This requires the "Safe Restart" plugin. |
+| http://localhost:8083/safeRestart                          | This URL is used to safely restart Jenkins in a manner similar to /restart. It also requires the "Safe Restart" plugin.                                          |
+| http://localhost:8083/quietDown                            | This URL is used to put Jenkins in a "Quiet Down" mode. In this mode, no new build jobs are started.                                                             |
+| http://localhost:8083/cancelQuietDown                      | Stops quiet down mode                                                                                                                                            |
+| http://localhost:8083/exit                                 | Forces Jenkins to quit. Use with caution as it does not wait for build jobs to complete and may result in data loss.                                             |
+| http://localhost:8083/script                               | This URL is for running Groovy scripts inside Jenkins, often used for administrative purposes.                                                                   |
+| http://localhost:8083/pipeline-syntax                      | Jenkins Pipeline Syntax                                                                                                                                          | 
+| http://localhost:8083/plugin/job-dsl/api-viewer/index.html | Jenkins Documentation                                                                                                                                            | 
+| http://localhost:8083/safeExit                             | Jenkins safe exit                                                                                                                                                |
 
 # Configuration
 
