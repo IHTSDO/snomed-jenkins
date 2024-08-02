@@ -55,6 +55,10 @@ println "Reading ${SPREADSHEET_FILE_NAME}"
 downloadSpreadsheet(spreadsheet)
 makeFolders()
 
+PRJ_FILE = new File('/tmp/prj_list.txt')
+println "Project list to ${PRJ_FILE.getAbsolutePath()}"
+PRJ_FILE.write("")
+
 if (onProd) {
     println "On production"
     HOOK_FILE = new File('hook_list.txt')
@@ -95,6 +99,8 @@ spreadsheet.withReader { reader ->
 
     println "Number of projects created: ${noOfEnabledOfProjects}/${noOfProjects}"
 }
+
+PRJ_FILE.append("END OF PROJECT LIST\n")
 
 private void downloadSpreadsheet(File spreadsheet) {
     if (!DOWNLOAD && spreadsheet.exists()) {
@@ -198,6 +204,8 @@ void makeJobs(String projectName, def row) {
         HOOK_FILE.append("${nameMd5Token} ${projectName}\n")
     }
 
+    PRJ_FILE.append("${FOLDER_JOBS}/${projectName}\n")
+
     // Full pipelines for majority of branches.
     if (projectType.equalsIgnoreCase("bom")) {
         generatePipeline(FOLDER_JOBS, projectType, "", "", nameMd5Token, projectGitUri, projectName,  description, projectBuildTool, projectLanguage)
@@ -210,6 +218,7 @@ void makeJobs(String projectName, def row) {
         println "    SKIPPING: cve job for ${projectName} [ ${projectPipeLineType} ]"
     } else {
         generateFreestyle(JobTypes.cve, projectGitUri, projectName,  description, projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
+        PRJ_FILE.append("${FOLDER_CVE}/${projectName}\n")
     }
 
     // Setup E2E jobs.
@@ -217,7 +226,9 @@ void makeJobs(String projectName, def row) {
         println "    SKIPPING: e2e / ${projectName} [ ${projectPipeLineType} ]"
     } else {
         generateFreestyle(JobTypes.e2eDev, projectGitUri, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
+        PRJ_FILE.append("${FOLDER_E2E}/${projectName}\n")
         generateFreestyle(JobTypes.e2eUat, projectGitUri, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
+        PRJ_FILE.append("${FOLDER_E2E_UAT}/${projectName}\n")
     }
 }
 

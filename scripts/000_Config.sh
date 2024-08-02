@@ -1,8 +1,21 @@
 #!/usr/bin/env bash
+# Requires 2 environment variables are set:
+# SNOMED_SPREADSHEET_URL and JOB_NAME
+# where job_name is of the format 'folder/name'
 
 fixStr() {
     echo "$1" | sed -e 's/^"//' -e 's/"$//' -e 's/""/"/g'
 }
+
+if [[ -z "$JOB_NAME" ]]; then
+    echo "JOB_NAME not set, must be of the form 'folder/name'"
+    exit 1
+fi
+
+if [[ -z "$SNOMED_SPREADSHEET_URL" ]]; then
+    echo "SNOMED_SPREADSHEET_URL must point to the URL of the master spreadsheet"
+    exit 1
+fi
 
 BASEFOLDER="/tmp/"
 SPREADSHEET="${SNOMED_SPREADSHEET_URL}/gviz/tq?tqx=out:csv"
