@@ -456,6 +456,7 @@ The following is a list of the plugins we use in our Jenkins instance.
 # Linux box libraries installed
 
 * JDK* - 11 and 17 for example, depending on your source.
+* Also, the usual tools, git, maven, gradle, groovy, curl, wget, jq and imagemagick.
 * [doxygen](https://cheat.sh/doxygen)
 * [figlet](https://cheat.sh/figlet)
 * [graphviz/dot](https://cheat.sh/dot)
@@ -466,6 +467,8 @@ The following is a list of the plugins we use in our Jenkins instance.
     - sudo tar -C /usr/local --strip-components 1 -xvf node-v20.9.0-linux-x64.tar.xz
 * [xfvb](https://en.wikipedia.org/wiki/Xvfb) Virtual graphics buffer.
 * [libgbm-dev](https://github.com/robclark/libgbm) generic buffer management API
+
+For more information see the docker install/setup script [here](docker/config/script.sh).
 
 # GITHUB authentication
 

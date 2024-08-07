@@ -1,4 +1,6 @@
+// This script is taken from this location without change:
 // https://gist.github.com/gwsu2008/c99964c55cce59aadb149d2834d5ceaf
+
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval
 
 ScriptApproval scriptApproval = ScriptApproval.get()

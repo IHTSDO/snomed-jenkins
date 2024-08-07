@@ -38,6 +38,7 @@ createNewTicket() {
         priority="Major / Medium"
     fi
 
+    # Make json string with fields completed.
     read -r -d '' jsonData << EOF
 {
   "fields": {
@@ -57,7 +58,8 @@ createNewTicket() {
 }
 EOF
 
-    if [[ $HOST =~ jenkins* ]]; then
+    # Finally use curl to create this ticket if on prod.
+    if [[ $HOST =~ prod-jenkins* ]]; then
         json=$(curl -s -u "${JIRA_CREDS}" -H "Content-Type: application/json" -X POST --data "${jsonData}" "${URL_BASE}/issue")
         echo "$json" | jq '.key'
     else
@@ -88,6 +90,8 @@ lastCve=""
 list=""
 first=true
 
+# Read each line of the TSV (Tab Separated Values) file.
+# This file is sorted so each line is a separate library but CVE's are grouped together.
 while read -r score cve name; do
     if $first; then
         lastScore="$score"
