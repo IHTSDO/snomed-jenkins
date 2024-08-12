@@ -455,14 +455,19 @@ The following is a list of the plugins we use in our Jenkins instance.
 
 # Linux box libraries installed
 
+I recommend
+installing [cht](https://github.com/chubin/cheat.sh?tab=readme-ov-file#command-line-client-chtsh) and [tldr](https://github.com/tldr-pages/tldr/tree/main).
+These are useful to get simple pages and examples of the following commands.
+
 * JDK* - 11 and 17 for example, depending on your source.
 * Also, the usual tools, git, maven, gradle, groovy, curl, wget, jq and imagemagick.
-* [doxygen](https://cheat.sh/doxygen)
-* [figlet](https://cheat.sh/figlet)
-* [graphviz/dot](https://cheat.sh/dot)
-* [bc](https://cheat.sh/bc)
-* [xmlstarlet](https://github.com/tldr-pages/tldr/blob/main/pages/common/xmlstarlet.md)
-* [xmllint (installed in libxml2-utils)](https://cheat.sh/xmllint)
+* [doxygen](https://cheat.sh/doxygen) - javadoc++
+* [figlet](https://cheat.sh/figlet) - Print a nicer banner.
+* [graphviz/dot](https://cheat.sh/dot) - Used to convert dot files to images.
+* [bc](https://cheat.sh/bc) - needed in bash to compare floating point numbers.
+* [jq](https://github.com/jqlang/jq) - query json from the command line.
+* [xmlstarlet](https://github.com/tldr-pages/tldr/blob/main/pages/common/xmlstarlet.md) - query xml from command line.
+* [xmllint (installed in libxml2-utils)](https://cheat.sh/xmllint) - query xml from command line.
 * nodejs, npm and npx with:
     - sudo tar -C /usr/local --strip-components 1 -xvf node-v20.9.0-linux-x64.tar.xz
 * [xfvb](https://en.wikipedia.org/wiki/Xvfb) Virtual graphics buffer.
