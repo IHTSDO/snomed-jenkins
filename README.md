@@ -479,6 +479,8 @@ For more information see the docker install/setup script [here](docker/config/sc
 
 Github requires a key for access, this can be created as follows:
 
+> Note this is performed on the machine you are connecting from, i.e. docker container or your machine.
+
 * Create the key pair using:
 
 ```bash
