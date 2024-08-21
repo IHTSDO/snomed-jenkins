@@ -233,16 +233,6 @@ void makeJobs(String projectName, def row) {
 }
 
 String generatePipeline(String folder, String suffix, String includeBranches, String cronExpression, String md5Token, String projectGitUri, String projectName, String desc, String projectBuildTool, String projectLanguage) {
-    // JCO: Force all Java to 17, lets see if it builds, if not and we need to work on it it must be upgraded to 17!
-    if (projectLanguage.toLowerCase().startsWith("jdk")) {
-        int ver=Integer.parseInt(projectLanguage.substring(3))
-
-        if (ver < 17) {
-            println "    Forcing jdk to 17 from ${projectLanguage}"
-            projectLanguage='Jdk17'
-        }
-    }
-
     // JCO: Maven pipeline includes all gradle config, so use that!
     if (projectBuildTool == 'Gradle') {
         projectBuildTool='Maven'
