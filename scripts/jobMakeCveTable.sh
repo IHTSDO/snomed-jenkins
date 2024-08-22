@@ -218,16 +218,19 @@ writeToTsv() {
 }
 
 writeSummary() {
-    writeHtmlTableHeaderSummary
+    echo "Number of CVE's<br/>"
 
+    writeHtmlTableHeaderSummary
     local riskyCves
     riskyCves=$(cut -f 1,2 < "$CVE_TSV_FILE" | sort -u)
-    echo "<tr><td class='CVEred'>Number of CVE's CRITICAL (9.0 - 10.0): </td><td class='CVEred'>$(printf '%s' "$riskyCves" | grep -c -P '^(9|10)\.')</td></tr>"
-    echo "<tr><td class='CVEorange'>Number of CVE's HIGH (8.0 - 8.9): </td><td class='CVEorange'>$(printf '%s' "$riskyCves" | grep -c -P '^8\.')</td></tr>"
-    echo "<tr><td class='CVEyellow'>Number of CVE's HIGH (7.0 - 7.9): </td><td class='CVEyellow'>$(printf '%s' "$riskyCves" | grep -c -P '^7\.')</td></tr>"
+    echo "<tr><td class='CVEred'>Jira Blocker/Highest (9.5 - 10.0): </td><td class='CVEred'>$(printf '%s' "$riskyCves" | grep -c -P '^(9|10)\.')</td></tr>"
+    echo "<tr><td class='CVEorange'>Jira Critical/High (8.0 - 9.4): </td><td class='CVEorange'>$(printf '%s' "$riskyCves" | grep -c -P '^8\.')</td></tr>"
+    echo "<tr><td class='CVEyellow'>Jira Major/Medium (7.0 - 7.9): </td><td class='CVEyellow'>$(printf '%s' "$riskyCves" | grep -c -P '^7\.')</td></tr>"
 
     writeHtmlTableTrailer
 
+    echo "Note this colour scale is in Jira ticket priority, not CVE score severity see: <a target='_blank' href='https://en.wikipedia.org/wiki/Common_Vulnerability_Scoring_System#Version_3'>CVE Score V3</a><br/><br/>"
+    echo "CVE Scores: Low (0.1-3.9), Medium (4.0-6.9), High (7.0-8.9), and Critical (9.0-10.0)<br/>"
     echo "<br/>"
     echo "Download spreadsheet of this table: <a href='cveTable.tsv' target='_top'>cveTable.tsv</a><br/>"
     echo "Generated: $(date)<br/>"
@@ -238,19 +241,20 @@ outCve() {
     local lastScore="$1"
     local lastCve="$2"
     local lastName="$3"
-    local bigger7
-    local bigger9
     local scoreclass
     local tickets
-    bigger7=$(echo "$lastScore >= 7.0" | bc)
+    local bigger70
+    local bigger80
+    local bigger95
+    bigger70=$(echo "$lastScore >= 7.0" | bc)
 
-    if (( bigger7 > 0 )); then
-        bigger8=$(echo "$lastScore >= 8.0" | bc)
-        bigger9=$(echo "$lastScore >= 9.0" | bc)
+    if (( bigger70 > 0 )); then
+        bigger95=$(echo "$score >= 9.5" | bc)
+        bigger80=$(echo "$score >= 8.0" | bc)
 
-        if (( bigger9 > 0 )); then
+        if (( bigger95 > 0 )); then
             scoreclass="CVEred"
-        elif (( bigger8 > 0 )); then
+        elif (( bigger80 > 0 )); then
             scoreclass="CVEorange"
         else
             scoreclass="CVEyellow"

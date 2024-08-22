@@ -29,10 +29,14 @@ createNewTicket() {
     local description="Automatically created CVE ticket:\nMitigate CVE: [${cve}|${CVE_URL}/${cve}]\nSystems affected:\n||System||\n|${listFmt}|\n"
     local issueType="Improvement"
     local label="cve"
-    local bigger9
-    bigger9=$(echo "$score >= 9.0" | bc)
+    local bigger95
+    local bigger80
+    bigger95=$(echo "$score >= 9.5" | bc)
+    bigger80=$(echo "$score >= 8.0" | bc)
 
-    if (( bigger9 > 0 )); then
+    if (( bigger95 > 0 )); then
+        priority="Blocker / Highest"
+    elif (( bigger80 > 0 )); then
         priority="Critical / High"
     else
         priority="Major / Medium"
