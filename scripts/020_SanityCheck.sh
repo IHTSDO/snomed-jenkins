@@ -27,16 +27,7 @@ checkLicense() {
 }
 
 mavenSanity() {
-    if [[ -e pom.xml ]]; then
-        # Required here to ensure that the pom.xml file includes the JaCoCo plugin prior to test.
-        # TODO: Make part of projects pom, so we don't hack in this way.
-        echo "Adjusting pom.xml"
-
-        while read -r pomfile; do
-            echo "$pomfile"
-            sed -i '/<plugins>/r /var/lib/jenkins/workspace/_PipelineCreationJob_/resources/JaCoCo/jacoco.xml' "$pomfile"
-        done<<<"$(find . -type f -name pom.xml)"
-    else
+    if [[ ! -e pom.xml ]]; then
         echo "Missing pom.xml"
         exit 1
     fi
