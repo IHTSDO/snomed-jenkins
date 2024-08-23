@@ -10,7 +10,13 @@ case $SNOMED_PROJECT_LANGUAGE in
     *)
         case $SNOMED_PROJECT_BUILD_TOOL in
             maven)
-                mvn jacoco:report -Ddependency-check.skip=true
+                # Search for jacoco setup in pom, if its there run the jacoco report.
+                grep "<artifactId>jacoco-maven-plugin</artifactId>" pom.xml
+                retval=$?
+
+                if (( retval == 0 )); then
+                    mvn jacoco:report -Ddependency-check.skip=true
+                fi
                 ;;
             gradle)
                 # echo "No quality checks for gradle projects as yet."
