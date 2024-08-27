@@ -138,9 +138,9 @@ pipeline {
 
     environment {
         SLACK_TOKEN = credentials('SLACK_CREDS')
-        SLACK_CHANNEL_SUCCESS = """${sh( returnStdout: true, script: "../_PipelineCreationJob_/scripts/950_SelectCommsChannel.sh success" )}"""
-        SLACK_CHANNEL_FAILURE = """${sh( returnStdout: true, script: "../_PipelineCreationJob_/scripts/950_SelectCommsChannel.sh failure" )}"""
-        EMAIL_LIST = """${sh( returnStdout: true, script: "../_PipelineCreationJob_/scripts/950_SelectCommsChannel.sh email" )}"""
+        SLACK_CHANNEL_SUCCESS = """${sh( returnStdout: true, script: "../_PipelineCreationJob_/scripts/PipelineGetConfig.sh success" )}"""
+        SLACK_CHANNEL_FAILURE = """${sh( returnStdout: true, script: "../_PipelineCreationJob_/scripts/PipelineGetConfig.sh failure" )}"""
+        EMAIL_LIST = """${sh( returnStdout: true, script: "../_PipelineCreationJob_/scripts/PipelineGetConfig.sh email" )}"""
     }
 
     post {
