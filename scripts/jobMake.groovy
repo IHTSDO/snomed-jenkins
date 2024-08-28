@@ -239,6 +239,11 @@ String generatePipeline(String folder, String suffix, String includeBranches, St
         projectBuildTool='Maven'
     }
 
+    // JCO: Javascript follows same pipeline as Typescript.
+    if (projectLanguage == 'Javascript') {
+        projectLanguage='Typescript'
+    }
+
     String projectPipeLineType = new String("${projectBuildTool}_${projectLanguage}")
     println "    CREATING: ${folder} / ${projectName} (cron='${cronExpression}') (pipeline=${projectPipeLineType})"
 
