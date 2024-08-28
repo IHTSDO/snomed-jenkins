@@ -13,8 +13,8 @@ runDoxygenOnBuild() {
     doxygen || true
 }
 
-case $SNOMED_PROJECT_LANGUAGE in
-    Cypress|Typescript|Javascript)
+case ${SNOMED_PROJECT_LANGUAGE,,} in
+    cypress|typescript|javascript)
         echo "No documentation required for this project."
         ;;
     *)

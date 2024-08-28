@@ -2,8 +2,12 @@
 source "$SCRIPTS_PATH/000_Config.sh"
 figlet -w 500 "Audit"
 
-case $SNOMED_PROJECT_LANGUAGE in
-    Typescript)
+case ${SNOMED_PROJECT_LANGUAGE,,} in
+    javascript)
+        echo "Not performing sonar check."
+        ;;
+
+    typescript)
         cat>sonar-project.properties<<EOF
 sonar.projectKey=${SNOMED_PROJECT_GROUP_ARTIFACT,,}
 sonar.projectName=${SNOMED_PROJECT_NAME,,}
@@ -19,7 +23,7 @@ EOF
         node_modules/sonarqube-scanner/bin/sonar-scanner -Dsonar.host.url=${SONAR_URL} -Dsonar.login=${SONAR_TOKEN}
         ;;
     *)
-        case $SNOMED_PROJECT_BUILD_TOOL in
+        case ${SNOMED_PROJECT_BUILD_TOOL,,} in
             maven)
                 mvn \
                     -DskipTests \

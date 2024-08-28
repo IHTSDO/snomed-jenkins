@@ -2,14 +2,14 @@
 source "$SCRIPTS_PATH/000_Config.sh"
 figlet -w 500 "Unit Testing"
 
-case $SNOMED_PROJECT_LANGUAGE in
-    Cypress)
+case ${SNOMED_PROJECT_LANGUAGE,,} in
+    cypress)
         echo "No test tool required."
         ;;
-    Javascript)
+    javascript)
         echo "No test tool required at the moment."
         ;;
-    Typescript)
+    typescript)
         echo "No test tool required at the moment."
         # ng test
         ;;

@@ -2,8 +2,8 @@
 source "$SCRIPTS_PATH/000_Config.sh"
 figlet -w 500 "Code Quality"
 
-case $SNOMED_PROJECT_LANGUAGE in
-    Cypress|Typescript|Javascript)
+case ${SNOMED_PROJECT_LANGUAGE,,} in
+    cypress|typescript|javascript)
         echo "No quality tool required."
         # ng lint
         ;;

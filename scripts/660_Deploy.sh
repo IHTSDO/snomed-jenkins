@@ -98,8 +98,8 @@ performMavenDeployments() {
 echo "--------------------------------------"
 
 if [[ $SNOMED_PROJECT_DEPLOY_ENABLED == TRUE ]]; then
-    case $SNOMED_PROJECT_LANGUAGE in
-        Cypress | Typescript | Javascript)
+    case ${SNOMED_PROJECT_LANGUAGE,,} in
+        cypress | typescript | javascript)
             performMavenDeployments
             ;;
         *)
