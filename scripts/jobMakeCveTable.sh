@@ -6,6 +6,7 @@ CVE_URL=https://ossindex.sonatype.org/vulnerability
 BUILD_URL=$JENKINS_URL/job/cve/job
 JIRA_URL=https://jira.${SNOMED_TOOLS_URL}/browse/
 URL_BASE=https://jira.${SNOMED_TOOLS_URL}/rest/api/2
+CURL_ARGS=("-s" "-H" "Authorization: Bearer ${JIRA_TOKEN}" "-H" "Content-Type: application/json" "-X")
 
 echo "SNOMED_TOOLS_URL = $SNOMED_TOOLS_URL"
 
@@ -17,9 +18,7 @@ findCveTickets() {
 }
 EOF
     local json
-    json=$(curl -s -u "${JIRA_CREDS}" -H "Content-Type: application/json" -X POST \
-        --data "${jsonData}" "${URL_BASE}/search")
-
+    json=$(curl "${CURL_ARGS[@]}" POST --data "${jsonData}" "${URL_BASE}/search")
     num=$(echo "$json" | jq '.total')
 
     if (( num > 0 )); then
