@@ -248,8 +248,8 @@ outCve() {
     bigger70=$(echo "$lastScore >= 7.0" | bc)
 
     if (( bigger70 > 0 )); then
-        bigger95=$(echo "$score >= 9.5" | bc)
-        bigger80=$(echo "$score >= 8.0" | bc)
+        bigger95=$(echo "$lastScore >= 9.5" | bc)
+        bigger80=$(echo "$lastScore >= 8.0" | bc)
 
         if (( bigger95 > 0 )); then
             scoreclass="CVEred"
