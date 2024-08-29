@@ -8,6 +8,7 @@ if [[ -d cypress ]]; then
 
     {
         echo "{"
+        # set | grep "JOB_NAME"
 
         # Populate cypress config file with any TEST_* variables,
         # see https://JENKINS_URL/manage/configure "Global properties" section (You need jenkins admin permission to see/edit these).
@@ -18,12 +19,21 @@ if [[ -d cypress ]]; then
         # Populate config file with URLS depending on branch. main/master = UAT, others = DEV.
         case $GIT_BRANCH in
             main | master)
-                echo "    \"URL_LOGIN\": \"https://uat-ims.${SNOMED_TOOLS_URL}/#/login?serviceReferer=\","
-                echo "    \"URL_BROWSER\": \"https://uat-browser.${SNOMED_TOOLS_URL}\","
-                echo "    \"URL_AUTHORING\": \"https://uat-authoring.${SNOMED_TOOLS_URL}\","
-                echo "    \"URL_REPORTING\": \"https://uat-snowstorm.${SNOMED_TOOLS_URL}/reporting/\","
-                echo "    \"URL_RAD\": \"https://uat-release.${SNOMED_TOOLS_URL}/\","
-                echo "    \"URL_SIMPLEX\": \"https://uat-simplex.${SNOMED_TOOLS_URL}/\""
+                if [[ $JOB_NAME =~ ^e2euat ]]; then
+                    echo "    \"URL_LOGIN\": \"https://uat-ims.${SNOMED_TOOLS_URL}/#/login?serviceReferer=\","
+                    echo "    \"URL_BROWSER\": \"https://uat-browser.${SNOMED_TOOLS_URL}\","
+                    echo "    \"URL_AUTHORING\": \"https://uat-authoring.${SNOMED_TOOLS_URL}\","
+                    echo "    \"URL_REPORTING\": \"https://uat-snowstorm.${SNOMED_TOOLS_URL}/reporting/\","
+                    echo "    \"URL_RAD\": \"https://uat-release.${SNOMED_TOOLS_URL}/\","
+                    echo "    \"URL_SIMPLEX\": \"https://uat-simplex.${SNOMED_TOOLS_URL}/\""
+                else
+                    echo "    \"URL_LOGIN\": \"https://uat-ims.${SNOMED_TOOLS_URL}/#/login?serviceReferer=\","
+                    echo "    \"URL_BROWSER\": \"https://uat-browser.${SNOMED_TOOLS_URL}\","
+                    echo "    \"URL_AUTHORING\": \"https://uat-authoring.${SNOMED_TOOLS_URL}\","
+                    echo "    \"URL_REPORTING\": \"https://uat-snowstorm.${SNOMED_TOOLS_URL}/reporting/\","
+                    echo "    \"URL_RAD\": \"https://uat-release.${SNOMED_TOOLS_URL}/\","
+                    echo "    \"URL_SIMPLEX\": \"https://uat-simplex.${SNOMED_TOOLS_URL}/\""
+                fi
                 ;;
             *)
                 echo "    \"URL_LOGIN\": \"https://dev-ims.${SNOMED_TOOLS_URL}/#/login?serviceReferer=\","

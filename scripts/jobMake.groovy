@@ -223,13 +223,13 @@ void makeJobs(String projectName, def row) {
     }
 
     // Setup E2E jobs.
-    if (!projectLanguage.toLowerCase().startsWith("typescript")) {
-        println "    SKIPPING: e2e / ${projectName} [ ${projectPipeLineType} ]"
-    } else {
+    if (projectLanguage.equalsIgnoreCase("javascript") || projectLanguage.equalsIgnoreCase("typescript")) {
         generateFreestyle(JobTypes.e2eDev, projectGitUri, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
         PRJ_FILE.append("${FOLDER_E2E}/${projectName}\n")
         generateFreestyle(JobTypes.e2eUat, projectGitUri, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
         PRJ_FILE.append("${FOLDER_E2E_UAT}/${projectName}\n")
+    } else {
+        println "    SKIPPING: e2e / ${projectName} [ ${projectPipeLineType} ]"
     }
 }
 

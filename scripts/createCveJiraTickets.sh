@@ -18,7 +18,7 @@ getListAllComponents() {
     fi
 
     echo "Creating components file."
-    curl "${CURL_ARGS[@]}" GET "${URL_BASE}/project/PIP/components" |
+    curl "${CURL_ARGS[@]}" GET "${URL_BASE}/project/${PROJECT}/components" |
         jq -r '(.[] | [.id, .name]) | @tsv' >> "${COMPONENT_CACHE}"
 }
 
