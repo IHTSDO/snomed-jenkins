@@ -18,7 +18,7 @@ if [[ -d cypress ]]; then
 
         # Populate config file with URLS depending on branch. main/master = UAT, others = DEV.
         case $GIT_BRANCH in
-            main | master)
+            origin/main | origin/master)
                 if [[ $JOB_NAME =~ ^e2euat ]]; then
                     echo "    \"URL_LOGIN\": \"https://uat-ims.${SNOMED_TOOLS_URL}/#/login?serviceReferer=\","
                     echo "    \"URL_BROWSER\": \"https://uat-browser.${SNOMED_TOOLS_URL}\","
