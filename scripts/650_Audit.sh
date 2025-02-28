@@ -20,7 +20,7 @@ sonar.exclusions=src/main/**/*,node_modules/**/*,.angular/**/*,dist/**/*
 sonar.sourceEncoding=UTF-8
 EOF
 
-        node_modules/sonarqube-scanner/bin/sonar-scanner -Dsonar.host.url=${SONAR_URL} -Dsonar.login=${SONAR_TOKEN}
+        node_modules/sonarqube-scanner/bin/sonar-scanner -Dsonar.host.url=${SONAR_URL} -Dsonar.login=${SONAR_TOKEN} || npm exec @sonar/scan -- -Dsonar.host.url=${SONAR_URL} -Dsonar.login=${SONAR_TOKEN}
         ;;
     *)
         case ${SNOMED_PROJECT_BUILD_TOOL,,} in
