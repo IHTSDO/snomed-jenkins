@@ -38,8 +38,9 @@ FOLDER_JOBS='jobs'
 FOLDER_CVE='cve'
 FOLDER_E2E='e2e'
 FOLDER_E2E_UAT='e2euat'
+FOLDER_E2E_PROD='e2eprod'
 
-enum JobTypes {cve, e2eDev, e2eUat}
+enum JobTypes {cve, e2eDev, e2eUat, e2eProd}
 
 //NUMBER_OF_JOBS_TO_KEEP = 5
 //NUMBER_OF_DAYS_TO_KEEP = 5
@@ -166,7 +167,19 @@ void makeFolders() {
     }
 
     folder(FOLDER_E2E_UAT) {
-        displayName('Manual Builds of Main/Master E2E')
+        displayName('Manual Builds of Main/Master E2E - UAT')
+        description("""
+<div style="border-radius:25px;border:5px solid gray;padding:10px;background:#07AAE0;">
+    <font style="color:white;font-size:30px;">Manual Builds - Main/Master is built on demand to Cypress E2E tests</font><br/>
+    <font style="font-family:'Courier New';color:black;font-size:20px;">
+       <a href="${SPREADSHEET_URL}"><font style="color:white;">Spreadsheet</font></a>
+    </font>
+</div>
+""")
+    }
+
+    folder(FOLDER_E2E_PROD) {
+        displayName('Manual Builds of Main/Master E2E - PROD')
         description("""
 <div style="border-radius:25px;border:5px solid gray;padding:10px;background:#07AAE0;">
     <font style="color:white;font-size:30px;">Manual Builds - Main/Master is built on demand to Cypress E2E tests</font><br/>
@@ -228,6 +241,11 @@ void makeJobs(String projectName, def row) {
         PRJ_FILE.append("${FOLDER_E2E}/${projectName}\n")
         generateFreestyle(JobTypes.e2eUat, projectGitUri, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
         PRJ_FILE.append("${FOLDER_E2E_UAT}/${projectName}\n")
+
+        if (projectName.equalsIgnoreCase("sct-browser-frontend")) {
+            generateFreestyle(JobTypes.e2eProd, projectGitUri, projectName, description, projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
+            PRJ_FILE.append("${FOLDER_E2E_PROD}/${projectName}\n")
+        }
     } else {
         println "    SKIPPING: e2e / ${projectName} [ ${projectPipeLineType} ]"
     }
@@ -326,9 +344,21 @@ $SCRIPTS_PATH/640_EndToEndTest.sh"""
         case JobTypes.e2eUat:
             includeBranches = "master,main"
             folder = FOLDER_E2E_UAT
-            suffix = "_E2E_MAIN"
+            suffix = "_E2E_UAT"
             cronExpression = MANUAL_TRIGGER_E2E
             slackSubject = "E2E testing UAT"
+            commandStr = """$SCRIPTS_PATH/010_Initialize.sh
+$SCRIPTS_PATH/020_SanityCheck.sh
+$SCRIPTS_PATH/500_Build.sh
+$SCRIPTS_PATH/640_EndToEndTest.sh"""
+            println "    CREATING: ${folder} / ${projectName} (Manual)"
+            break
+        case JobTypes.e2eProd:
+            includeBranches = "master,main"
+            folder = FOLDER_E2E_PROD
+            suffix = "_E2E_PROD"
+            cronExpression = MANUAL_TRIGGER_E2E
+            slackSubject = "E2E testing PROD"
             commandStr = """$SCRIPTS_PATH/010_Initialize.sh
 $SCRIPTS_PATH/020_SanityCheck.sh
 $SCRIPTS_PATH/500_Build.sh
@@ -361,8 +391,11 @@ $SCRIPTS_PATH/640_EndToEndTest.sh"""
         logRotator(-1, NUMBER_OF_NIGHTLY_JOBS_TO_KEEP)
         wrappers {
             ansiColorBuildWrapper { colorMapName('xterm') }
-            credentialsBinding {
-                usernamePassword('TEST_LOGIN_USR','TEST_LOGIN_PSW', 'test-account-details')
+
+            if (jobType == JobTypes.e2eDev || jobType == JobTypes.e2eUat) {
+                credentialsBinding {
+                    usernamePassword('TEST_LOGIN_USR', 'TEST_LOGIN_PSW', getTestAccount(jobType, projectName))
+                }
             }
         }
 
@@ -481,4 +514,22 @@ String convertToEmails(String projectNotifiedUsers) {
     }
 
     return result
+}
+
+String getTestAccount(JobTypes jobType, String projectName) {
+    String testAccount = ''
+
+    if (jobType == JobTypes.e2eDev) {
+        testAccount = 'TEST_DEV'
+    } else if (jobType == JobTypes.e2eUat) {
+        testAccount = 'TEST_UAT'
+    } else {
+        return testAccount
+    }
+
+    if (projectName.equalsIgnoreCase("release-dashboard-ui")) {
+        testAccount = 'RAD_' + testAccount
+    }
+
+    return testAccount
 }
