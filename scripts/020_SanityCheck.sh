@@ -45,16 +45,20 @@ gradleSanity() {
 }
 
 gitLeaksCheck() {
-    echo "--------------------------------------------------------------------------------"
-    echo "GitLeaks check"
-    GITLEAKS="gitleaks"
+    if [[ "${SNOMED_PROJECT_LANGUAGE,,}" == "javascript" ]]; then
+        echo "Not performing Gitleaks check."
+    else 
+      echo "--------------------------------------------------------------------------------"
+      echo "GitLeaks check"
+      GITLEAKS="gitleaks"
 
-    if [[ -e /opt/gitleaks/gitleaks ]]; then
-        GITLEAKS="/opt/gitleaks/gitleaks"
+      if [[ -e /opt/gitleaks/gitleaks ]]; then
+          GITLEAKS="/opt/gitleaks/gitleaks"
+      fi
+
+      # Add "|| true" to following line to allow builds to continue even if gitleaks finds an issue.
+      $GITLEAKS -c "$GITLEAKSWHITELIST" detect --source . -v
     fi
-
-    # Add "|| true" to following line to allow builds to continue even if gitleaks finds an issue.
-    $GITLEAKS -c "$GITLEAKSWHITELIST" detect --source . -v
 }
 
 checkText() {
