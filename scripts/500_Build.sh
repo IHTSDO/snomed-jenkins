@@ -9,6 +9,7 @@ case $SNOMED_PROJECT_LANGUAGE in
         ;;
     Javascript)
         gem list -i sass || gem install sass
+        mvn -U clean package -DskipTests -Ddependency-check.skip=true
         ;;
     *)
         case $SNOMED_PROJECT_BUILD_TOOL in
