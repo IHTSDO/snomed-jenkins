@@ -7,8 +7,6 @@ case $SNOMED_PROJECT_LANGUAGE in
         npm install
         ng build
         ;;
-    *)
-case $SNOMED_PROJECT_LANGUAGE in
     Javascript)
         sh 'which ruby || sudo apt-get install -y ruby-full'
         sh 'gem list -i sass || gem install sass'
@@ -29,5 +27,5 @@ case $SNOMED_PROJECT_LANGUAGE in
                 exit 1
                 ;;
         esac
-    ;;
+        ;;
 esac
