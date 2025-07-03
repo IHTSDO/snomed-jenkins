@@ -8,8 +8,8 @@ case $SNOMED_PROJECT_LANGUAGE in
         ng build
         ;;
     Javascript)
-        sh 'which ruby || sudo apt-get install -y ruby-full'
-        sh 'gem list -i sass || gem install sass'
+        which ruby || sudo apt-get install -y ruby-full
+        gem list -i sass || gem install sass
         ;;
     *)
         case $SNOMED_PROJECT_BUILD_TOOL in
