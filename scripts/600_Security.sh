@@ -11,7 +11,8 @@ case ${SNOMED_PROJECT_LANGUAGE,,} in
     *)
         case $SNOMED_PROJECT_BUILD_TOOL in
             maven)
-                mvn dependency-check:check -DskipTests
+		echo "Using NVD API Key starting: \"${NVD_API_KEY:0:5}\""
+                mvn dependency-check:check -DskipTests -Dnvd.api.key=$NVD_API_KEY
 
                 # Always make empty report file.
                 if [[ ! -d "target" ]]; then

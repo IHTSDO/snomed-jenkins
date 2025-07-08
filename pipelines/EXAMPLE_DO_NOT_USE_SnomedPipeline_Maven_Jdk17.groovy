@@ -35,7 +35,10 @@ pipeline {
         stage('Test') { steps { sh "../_PipelineCreationJob_/scripts/510_Test.sh" } }
 
         stage('Security') {
-            when {
+            environment {
+                NVD_API_KEY = credentials('NVD_API_KEY')
+            }
+	    when {
                 anyOf {
                     branch 'main'
                     branch 'master'
