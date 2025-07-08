@@ -392,6 +392,12 @@ $SCRIPTS_PATH/640_EndToEndTest.sh"""
         wrappers {
             ansiColorBuildWrapper { colorMapName('xterm') }
 
+            if (jobType == JobTypes.cve) {
+                credentialsBinding {
+                    string('NVD_API_KEY', 'NVD_API_KEY')
+                }
+            }
+
             if (jobType == JobTypes.e2eDev || jobType == JobTypes.e2eUat) {
                 credentialsBinding {
                     usernamePassword('TEST_LOGIN_USR', 'TEST_LOGIN_PSW', getTestAccount(jobType, projectName))
