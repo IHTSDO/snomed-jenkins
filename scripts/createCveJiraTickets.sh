@@ -4,7 +4,6 @@
 LOC=$JENKINS_HOME/userContent
 CVE_TSV_FILE=$LOC/cveTable.tsv
 COMPONENT_CACHE=/tmp/jira_components_cache.tsv
-URL_BASE=https://jira.${SNOMED_TOOLS_URL}/rest/api/2
 CVE_URL=https://ossindex.sonatype.org/vulnerability
 PROJECT=PIP
 
@@ -95,18 +94,13 @@ createNewTicket() {
         priority="Major / Medium"
     fi
 
-     local componentIds
-        componentIds=$(convertComponentListNamesToIDs "$list")
-        componentIds="[${componentIds}]"  # wrap as JSON array
-
-    local systemsList=$(echo "$list" | sed 's/,/, /g')
+     ocal systemsList=$(echo "$list" | sed 's/,/, /g')
     local jsonData=$(jq -n \
         --arg project "$PROJECT" \
         --arg summary "$summary" \
         --arg issueType "Improvement" \
         --arg priority "$priority" \
         --arg label "cve" \
-        --argjson components "$componentIds" \
         --arg cve "$cve" \
         --arg systemsList "$systemsList" \
         '{
@@ -116,7 +110,6 @@ createNewTicket() {
                 issuetype: { name: $issueType },
                 priority: { name: $priority },
                 labels: [$label],
-                components: $components,
                 description: {
                     type: "doc",
                     version: 1,
