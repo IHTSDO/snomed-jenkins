@@ -1,25 +1,29 @@
 #!/usr/bin/env bash
+
+# Jenkins
 LOC=$JENKINS_HOME/userContent
 CVE_TSV_FILE=$LOC/cveTable.tsv
 CVE_HTML_FILE=$LOC/cveTable.html
 CVE_URL=https://ossindex.sonatype.org/vulnerability
 BUILD_URL=$JENKINS_URL/job/cve/job
-JIRA_URL=https://jira.${SNOMED_TOOLS_URL}/browse/
-URL_BASE=https://jira.${SNOMED_TOOLS_URL}/rest/api/2
-CURL_ARGS=("-s" "-H" "Authorization: Bearer ${JIRA_TOKEN}" "-H" "Content-Type: application/json" "-X")
 
-echo "SNOMED_TOOLS_URL = $SNOMED_TOOLS_URL"
+# Jira
+URL_BASE=https://snomed.atlassian.net
+VIEW_URL=$URL_BASE/browse/
+SEARCH_URL=$URL_BASE/rest/api/3/search/jql
 
 findCveTickets() {
     local cve=$1
-    read -r -d '' jsonData << EOF
-{
-  "jql": "summary~\"${cve}\" or text~\"${cve}\""
-}
-EOF
-    local json
-    json=$(curl "${CURL_ARGS[@]}" POST --data "${jsonData}" "${URL_BASE}/search")
-    num=$(echo "$json" | jq '.total')
+    local jql="summary ~ \"${cve}\" OR description ~ \"${cve}\" OR comment ~ \"${cve}\""
+    local jsonData=$(jq -n --arg jql "$jql" '{ jql: $jql, "fields": ["id","key","summary","status","assignee","priority"] }')
+    local json=$(curl -s -u "$JIRA_API_KEY" \
+         -H "Accept: application/json" \
+         -H "Content-Type: application/json" \
+         -X POST \
+         --data "$jsonData" \
+         "$SEARCH_URL")
+
+    local num=$(echo "$json" | jq '.issues | length')
 
     if (( num > 0 )); then
         echo "$json" | jq -r '.issues[] | "\(.key)\t\(.fields.status.name)\t\(.fields.summary)\t\(.fields.assignee.displayName)\t\(.fields.priority.name)"'
@@ -273,7 +277,7 @@ outCve() {
                 assignee='Unassigned'
             fi
 
-            echo "                    <a href='$JIRA_URL$id' target='_top'>$id</a> <b>$status</b> : <i>$priority</i> : <b>$assignee</b> $text</br>"
+            echo "                    <a href='$VIEW_URL$id' target='_top'>$id</a> <b>$status</b> : <i>$priority</i> : <b>$assignee</b> $text</br>"
         done<<<"${tickets}"
         echo "                </td>"
 

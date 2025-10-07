@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
+
+# Jenkins
 LOC=$JENKINS_HOME/userContent
 CVE_TSV_FILE=$LOC/cveTable.tsv
 COMPONENT_CACHE=/tmp/jira_components_cache.tsv
 URL_BASE=https://jira.${SNOMED_TOOLS_URL}/rest/api/2
 CVE_URL=https://ossindex.sonatype.org/vulnerability
 PROJECT=PIP
-CURL_ARGS=("-s" "-H" "Authorization: Bearer ${JIRA_TOKEN}" "-H" "Content-Type: application/json" "-X")
+
+# Jira
+URL_BASE=https://snomed.atlassian.net
+VIEW_URL=$URL_BASE/browse/
+SEARCH_URL=$URL_BASE/rest/api/3/search/jql
 
 echo "SNOMED_TOOLS_URL = $SNOMED_TOOLS_URL"
 declare -A componentMap
@@ -18,8 +24,14 @@ getListAllComponents() {
     fi
 
     echo "Creating components file."
-    curl "${CURL_ARGS[@]}" GET "${URL_BASE}/project/${PROJECT}/components" |
-        jq -r '(.[] | [.id, .name]) | @tsv' >> "${COMPONENT_CACHE}"
+
+    # Make API request and store response
+    local response=$(curl -s -u "$JIRA_API_KEY" \
+        -H "Accept: application/json" \
+        -H "Content-Type: application/json" \
+        -X GET "${URL_BASE}/rest/api/3/project/${PROJECT}/components")
+
+    echo "$response" | jq -r '.[] | [.id, .name] | @tsv' > "${COMPONENT_CACHE}"
 }
 
 loadComponentsIntoMap() {
@@ -33,13 +45,17 @@ loadComponentsIntoMap() {
 # API Documentation: https://docs.atlassian.com/software/jira/docs/api/REST/8.20.8/#search
 findCveTicket() {
     local cve=$1
-    read -r -d '' jsonData << EOF
-{
-  "jql": "project = ${PROJECT} and labels = cve and summary ~ ${cve}"
-}
-EOF
+    local jql="project = ${PROJECT} and labels = cve and summary ~ ${cve}"
+    local jsonData=$(jq -n --arg jql "$jql" '{ jql: $jql }')
+    local json=$(curl -s -u "$JIRA_API_KEY" \
+         -H "Accept: application/json" \
+         -H "Content-Type: application/json" \
+         -X POST \
+         --data "$jsonData" \
+         "$SEARCH_URL")
 
-    curl "${CURL_ARGS[@]}" POST --data "${jsonData}" "${URL_BASE}/search" | jq '.total'
+    local num=$(echo "$json" | jq '.issues | length')
+    echo "$num"
 }
 
 convertComponentListNamesToIDs() {
@@ -66,11 +82,6 @@ createNewTicket() {
     local cve=$2
     local list=$3
     local summary="CVE: Address ${cve} (${score})"
-    local listFmt
-    listFmt=$(echo "$list" | sed 's/,/|\\n|/g')
-    local description="Automatically created CVE ticket:\nMitigate CVE: [${cve}|${CVE_URL}/${cve}]\nSystems affected:\n||System||\n|${listFmt}|\n"
-    local issueType="Improvement"
-    local label="cve"
     local bigger95
     local bigger80
     bigger95=$(echo "$score >= 9.5" | bc)
@@ -86,35 +97,52 @@ createNewTicket() {
 
     componentIds=$(convertComponentListNamesToIDs "$list")
 
-    # Make json string with fields completed.
-    read -r -d '' jsonData << EOF
-{
-  "fields": {
-    "project": {
-      "key": "${PROJECT}"
-    },
-    "components": [
-      ${componentIds}
-    ],
-    "summary": "${summary}",
-    "description": "${description}",
-    "issuetype": {
-      "name": "${issueType}"
-    },
-    "priority": {
-      "name": "${priority}"
-    },
-    "labels": ["${label}"]
-  }
-}
-EOF
+    local systemsList=$(echo "$list" | sed 's/,/, /g')
+    local jsonData=$(jq -n \
+        --arg project "$PROJECT" \
+        --arg summary "$summary" \
+        --arg issueType "Improvement" \
+        --arg priority "$priority" \
+        --arg label "cve" \
+        --argjson components "$componentIds" \
+        --arg cve "$cve" \
+        --arg systemsList "$systemsList" \
+        '{
+            fields: {
+                project: { key: $project },
+                summary: $summary,
+                issuetype: { name: $issueType },
+                priority: { name: $priority },
+                labels: [$label],
+                "components": [
+                  ${componentIds}
+                ],
+                components: $components,
+                description: {
+                    type: "doc",
+                    version: 1,
+                    content: [
+                        { type: "paragraph", content: [{ type: "text", text: "Automatically created CVE ticket." }] },
+                        { type: "paragraph", content: [{ type: "text", text: ("Mitigate CVE: " + $cve) }] },
+                        { type: "paragraph", content: [{ type: "text", text: ("Systems affected: " + $systemsList) }] }
+                    ]
+                }
+            }
+        }'
+    )
 
-    # Finally use curl to create this ticket if on prod.
     if [[ $HOST =~ prod-jenkins* ]]; then
-        json=$(curl "${CURL_ARGS[@]}" POST --data "${jsonData}" "${URL_BASE}/issue")
-        echo "$json" | jq '.key'
+        local response
+        response=$(echo "$jsonData" | curl -s -u "$JIRA_API_KEY" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -X POST \
+            --data @- \
+            "${URL_BASE}/rest/api/3/issue")
+
+        echo "$response" | jq -r '.key'
     else
-        echo "WARNING: Jira tickets can only be created from jenkins"
+        echo "WARNING: Jira tickets can only be created from Jenkins"
     fi
 }
 
