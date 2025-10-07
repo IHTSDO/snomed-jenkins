@@ -95,7 +95,9 @@ createNewTicket() {
         priority="Major / Medium"
     fi
 
-    componentIds=$(convertComponentListNamesToIDs "$list")
+     local componentIds
+        componentIds=$(convertComponentListNamesToIDs "$list")
+        componentIds="[${componentIds}]"  # wrap as JSON array
 
     local systemsList=$(echo "$list" | sed 's/,/, /g')
     local jsonData=$(jq -n \
@@ -114,9 +116,6 @@ createNewTicket() {
                 issuetype: { name: $issueType },
                 priority: { name: $priority },
                 labels: [$label],
-                "components": [
-                  ${componentIds}
-                ],
                 components: $components,
                 description: {
                     type: "doc",
