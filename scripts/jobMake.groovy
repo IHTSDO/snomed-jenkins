@@ -395,6 +395,8 @@ $SCRIPTS_PATH/640_EndToEndTest.sh"""
             if (jobType == JobTypes.cve) {
                 credentialsBinding {
                     string('NVD_API_KEY', 'NVD_API_KEY')
+                    string('OSS_USERNAME', 'OSS_USERNAME')
+                    string('OSS_TOKEN', 'OSS_TOKEN')
                 }
             }
 

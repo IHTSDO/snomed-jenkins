@@ -37,6 +37,8 @@ pipeline {
         stage('Security') {
             environment {
                 NVD_API_KEY = credentials('NVD_API_KEY')
+                OSS_USERNAME = credentials('OSS_USERNAME')
+                OSS_TOKEN = credentials('OSS_TOKEN')
             }
 	    when {
                 anyOf {

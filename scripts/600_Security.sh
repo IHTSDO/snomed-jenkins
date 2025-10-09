@@ -12,7 +12,7 @@ case ${SNOMED_PROJECT_LANGUAGE,,} in
         case $SNOMED_PROJECT_BUILD_TOOL in
             maven)
 		echo "Using NVD API Key starting: \"${NVD_API_KEY:0:5}\""
-                mvn dependency-check:check -DskipTests -Dnvd.api.key=$NVD_API_KEY
+                mvn dependency-check:check -DskipTests -Dnvd.api.key=$NVD_API_KEY -DossIndexAnalyzerEnabled=true -DossIndexUsername=$OSS_USERNAME -DossIndexPassword=$OSS_TOKEN
 
                 # Always make empty report file.
                 if [[ ! -d "target" ]]; then
