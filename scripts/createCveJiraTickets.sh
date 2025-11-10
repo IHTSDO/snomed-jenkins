@@ -125,20 +125,19 @@ createNewTicket() {
         }'
     )
 
-    if [[ $HOST == prod-jenkins* ]]; then
-        local response
-        response=$(echo "$jsonData" | curl -s \
-            -H "Authorization: Bearer $JIRA_API_KEY" \
-            -H "Accept: application/json" \
-            -H "Content-Type: application/json" \
-            -X POST \
-            --data @- \
-            "${URL_BASE}/rest/api/3/issue")
+    if [[ $HOST =~ prod-jenkins* ]]; then
+            local response
+            response=$(echo "$jsonData" | curl -s -u "$JIRA_API_KEY" \
+                -H "Accept: application/json" \
+                -H "Content-Type: application/json" \
+                -X POST \
+                --data @- \
+                "${URL_BASE}/rest/api/3/issue")
 
-        echo "$response" | jq -r '.key'
-    else
-        echo "WARNING: Jira tickets can only be created from Jenkins"
-    fi
+            echo "$response" | jq -r '.key'
+        else
+            echo "WARNING: Jira tickets can only be created from Jenkins"
+        fi
 }
 checkAndCreate() {
     local score=$1
