@@ -81,8 +81,8 @@ createNewTicket() {
     local cve=$2
     local list=$3
     local summary="CVE: Address ${cve} (${score})"
-    local bigger95
-    local bigger80
+
+    local bigger95 bigger80
     bigger95=$(echo "$score >= 9.5" | bc)
     bigger80=$(echo "$score >= 8.0" | bc)
 
@@ -94,13 +94,15 @@ createNewTicket() {
         priority="Major / Medium"
     fi
 
-     ocal systemsList=$(echo "$list" | sed 's/,/, /g')
-    local jsonData=$(jq -n \
+    local systemsList
+    systemsList=$(echo "$list" | sed 's/,/, /g')
+
+    local jsonData
+    jsonData=$(jq -n \
         --arg project "$PROJECT" \
         --arg summary "$summary" \
         --arg issueType "Improvement" \
         --arg priority "$priority" \
-        --arg label "cve" \
         --arg cve "$cve" \
         --arg systemsList "$systemsList" \
         '{
@@ -109,7 +111,7 @@ createNewTicket() {
                 summary: $summary,
                 issuetype: { name: $issueType },
                 priority: { name: $priority },
-                labels: [$label],
+                labels: ["cve"],
                 description: {
                     type: "doc",
                     version: 1,
@@ -123,9 +125,10 @@ createNewTicket() {
         }'
     )
 
-    if [[ $HOST =~ prod-jenkins* ]]; then
+    if [[ $HOST == prod-jenkins* ]]; then
         local response
-        response=$(echo "$jsonData" | curl -s -u "$JIRA_API_KEY" \
+        response=$(echo "$jsonData" | curl -s \
+            -H "Authorization: Bearer $JIRA_API_KEY" \
             -H "Accept: application/json" \
             -H "Content-Type: application/json" \
             -X POST \
@@ -137,7 +140,6 @@ createNewTicket() {
         echo "WARNING: Jira tickets can only be created from Jenkins"
     fi
 }
-
 checkAndCreate() {
     local score=$1
     local cve=$2
