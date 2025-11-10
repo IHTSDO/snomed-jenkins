@@ -134,6 +134,7 @@ createNewTicket() {
                 --data @- \
                 "${URL_BASE}/rest/api/3/issue")
 
+            echo "$response"
             echo "$response" | jq -r '.key'
         else
             echo "WARNING: Jira tickets can only be created from Jenkins"
