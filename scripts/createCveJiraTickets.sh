@@ -168,7 +168,7 @@ first=true
 
 # Read each line of the TSV (Tab Separated Values) file.
 # This file is sorted so each line is a separate library but CVE's are grouped together.
-while read -r score cve name; do
+while IFS=$'\t' read -r score cve name _owner; do
     if $first; then
         lastScore="$score"
         lastCve="$cve"

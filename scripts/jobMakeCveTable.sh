@@ -12,6 +12,43 @@ URL_BASE=https://snomed.atlassian.net
 VIEW_URL=$URL_BASE/browse/
 SEARCH_URL=$URL_BASE/rest/api/3/search/jql
 
+fixStr() {
+    echo "$1" | sed -e 's/\r//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+                    -e 's/^"//' -e 's/"$//' \
+                    -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+                    -e 's/""/"/g'
+}
+
+# Builds the projectOwners associative array: projectName -> owner.
+# Expects the spreadsheet CSV file path as $1.
+loadOwnerMap() {
+    local spreadsheetFile="${1:-${SPREADSHEET_FILE_NAME:-/tmp/ProjectsDSL.csv}}"
+
+    if [[ ! -e "$spreadsheetFile" ]]; then
+        echo "WARNING: Spreadsheet file not found: $spreadsheetFile, owner data unavailable"
+        return
+    fi
+
+    echo "Loading owner map from $spreadsheetFile"
+
+    # Skip header row. Columns: [0]=enabled [1]=project name ... [12]=owner
+    local firstLine=true
+    while IFS=',' read -r -a cols || [[ "${#cols[@]}" -gt 0 ]]; do
+        if $firstLine; then
+            firstLine=false
+            continue
+        fi
+        local projectName
+        projectName=$(fixStr "${cols[1]}" | tr '[:upper:]' '[:lower:]')
+        local owner
+        owner=$(fixStr "${cols[12]}")
+        if [[ -n "$projectName" ]]; then
+            projectOwners["$projectName"]="${owner:-Unknown}"
+            echo "    owner map: '$projectName' -> '${owner:-Unknown}'"
+        fi
+    done < "$spreadsheetFile"
+}
+
 findCveTickets() {
     local cve=$1
     local jql="summary ~ \"${cve}\" OR description ~ \"${cve}\" OR comment ~ \"${cve}\""
@@ -106,11 +143,78 @@ writeHtmlHeader() {
         .CVEyellow {
             background-color: #FFD300;
         }
+
+        .owner-filter {
+            margin: 10px 0 16px 0;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 5px 14px;
+            margin: 3px 3px 3px 0;
+            border-radius: 20px;
+            border: 1px solid #1C6EA4;
+            cursor: pointer;
+            background: #ffffff;
+            color: #1C6EA4;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .pill.active {
+            background: #1C6EA4;
+            color: #ffffff;
+        }
+
+        .pill:hover:not(.active) {
+            background: #D0E4F5;
+        }
+
+        .owner-filter-input {
+            display: none;
+        }
     </style>
 </head>
 
 <body>
 EOF
+}
+
+
+writeOwnerFilter() {
+    # $@ = unique owner names (sorted)
+
+    # CSS-only approach: radio inputs + labels (works inside sandbox="" iframes).
+    echo "    <input type='radio' id='owner-filter-all' name='owner-filter' class='owner-filter-input' checked>"
+    echo "    <input type='radio' id='owner-filter-none' name='owner-filter' class='owner-filter-input'>"
+    for owner in "$@"; do
+        local safeId
+        safeId="owner-filter-$(echo "$owner" | tr -cd '[:alnum:]-_')"
+        echo "    <input type='radio' id='$safeId' name='owner-filter' class='owner-filter-input'>"
+    done
+
+    echo "    <style>"
+    echo "        #owner-filter-all:checked ~ .owner-filter label[for='owner-filter-all'],"
+    echo "        #owner-filter-none:checked ~ .owner-filter label[for='owner-filter-none'] { background: #1C6EA4; color: #ffffff; }"
+    echo "        #owner-filter-none:checked ~ table.blueTable tr[data-owner] { display: none; }"
+    for owner in "$@"; do
+        local safeId
+        safeId="owner-filter-$(echo "$owner" | tr -cd '[:alnum:]-_')"
+        echo "        #${safeId}:checked ~ .owner-filter label[for='${safeId}'] { background: #1C6EA4; color: #ffffff; }"
+        echo "        #${safeId}:checked ~ table.blueTable tr[data-owner] { display: none; }"
+        echo "        #${safeId}:checked ~ table.blueTable tr[data-owner~='${owner}'] { display: table-row; }"
+    done
+    echo "    </style>"
+
+    echo "    <div class='owner-filter'>"
+    echo "        <label for='owner-filter-all' class='pill'>All</label>"
+    echo "        <label for='owner-filter-none' class='pill'>None</label>"
+    for owner in "$@"; do
+        local safeId
+        safeId="owner-filter-$(echo "$owner" | tr -cd '[:alnum:]-_')"
+        echo "        <label for='$safeId' class='pill'>$owner</label>"
+    done
+    echo "    </div>"
 }
 
 writeHtmlTableHeaderSummary() {
@@ -128,6 +232,7 @@ writeHtmlTableHeader() {
                 <th>Score</th>
                 <th>CVE</th>
                 <th>Project</th>
+                <th>Owner</th>
                 <th>Jira Tickets</th>
             </tr>
         </thead>
@@ -211,11 +316,12 @@ writeToTsv() {
         local cvescore="${cveArray[0]}"
         local cveid="${cveArray[1]}"
         local projectName="${cveArray[2]}"
+        local owner="${projectOwners[${projectName,,}]:-Unknown}"
         local bigger
         bigger=$(echo "$cvescore >= 7.0" | bc)
 
         if (( bigger > 0 )); then
-            printf "%s\t%s\t%s\n" "$cvescore" "$cveid" "$projectName"
+            printf "%s\t%s\t%s\t%s\n" "$cvescore" "$cveid" "$projectName" "$owner"
         fi
     done | sort -n -r
 }
@@ -244,6 +350,7 @@ outCve() {
     local lastScore="$1"
     local lastCve="$2"
     local lastName="$3"
+    local lastOwners="$4"
     local scoreclass
     local tickets
     local bigger70
@@ -265,10 +372,13 @@ outCve() {
 
         tickets=$(findCveTickets "$lastCve")
 
-        echo "            <tr>"
+        local displayOwners="${lastOwners// /, }"
+
+        echo "            <tr data-owner='$lastOwners'>"
         echo "                <td class='$scoreclass'>$lastScore</td>"
         echo "                <td><a href='$CVE_URL/$lastCve' target='_top'>$lastCve</a></td>"
         echo "                <td>$lastName</td>"
+        echo "                <td>$displayOwners</td>"
 
         echo "                <td style='text-align: left;'>"
 
@@ -286,39 +396,57 @@ outCve() {
 }
 
 writeToHtml() {
+    # Pre-scan TSV to collect unique owners for filter pills
+    declare -A ownerSet
+    while IFS=$'\t' read -r _score _cve _module owner; do
+        if [[ -n "$owner" ]]; then
+            ownerSet["$owner"]=1
+        fi
+    done < "$CVE_TSV_FILE"
+    mapfile -t sortedOwners < <(printf '%s\n' "${!ownerSet[@]}" | sort)
+
     writeHtmlHeader
     writeSummary
+    writeOwnerFilter "${sortedOwners[@]}"
     writeHtmlTableHeader
 
     local lastScore="0.0"
     local lastCve=""
     local moduleList=""
+    local ownerList=""
     local first=true
     local score
     local cve
     local module
+    local owner
 
-    while IFS=$'\t' read -r score cve module; do
+    while IFS=$'\t' read -r score cve module owner; do
         if $first; then
             lastScore="$score"
             lastCve="$cve"
             moduleList="<a href='$BUILD_URL/$module' target='_top'>$module</a>"
+            ownerList="$owner"
             first=false
             continue
         fi
 
         if [[ "$lastCve" == "$cve" ]]; then
             moduleList="$moduleList,<br/><a href='$BUILD_URL/$module' target='_top'>$module</a>"
+            # Append owner only if not already in the space-separated list
+            if [[ " ${ownerList} " != *" ${owner} "* ]]; then
+                ownerList="${ownerList} ${owner}"
+            fi
         else
-            outCve "$lastScore" "$lastCve" "$moduleList"
+            outCve "$lastScore" "$lastCve" "$moduleList" "$ownerList"
             lastScore="$score"
             lastCve="$cve"
             moduleList="<a href='$BUILD_URL/$module' target='_top'>$module</a>"
+            ownerList="$owner"
         fi
     done<"$CVE_TSV_FILE"
 
     if [[ $lastCve != "" ]]; then
-        outCve "$lastScore" "$lastCve" "$moduleList"
+        outCve "$lastScore" "$lastCve" "$moduleList" "$ownerList"
     fi
 
     writeHtmlTableTrailer
@@ -327,6 +455,8 @@ writeToHtml() {
 
 if [[ $1 == tsv ]]; then
     declare -A cves
+    declare -A projectOwners
+    loadOwnerMap "$2"
     scanForCves
 
     echo "Writing to $CVE_TSV_FILE"
