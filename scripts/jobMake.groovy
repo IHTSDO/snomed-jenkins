@@ -539,6 +539,8 @@ String getTestAccount(JobTypes jobType, String projectName) {
         testAccount = 'RAD_' + testAccount
     } else if (projectName.equalsIgnoreCase("reporting-ui")) {
         testAccount = 'RP_' + testAccount
+    } else if (projectName.equalsIgnoreCase("content-request-service-ui")) {
+        testAccount = 'CRS_' + testAccount
     }
 
     return testAccount
