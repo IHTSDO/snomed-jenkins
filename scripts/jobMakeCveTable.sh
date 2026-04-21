@@ -19,6 +19,10 @@ fixStr() {
                     -e 's/""/"/g'
 }
 
+ownerToSlug() {
+    echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g' | tr -cd '[:alnum:]-'
+}
+
 # Builds the projectOwners associative array: projectName -> owner.
 # Expects the spreadsheet CSV file path as $1.
 loadOwnerMap() {
@@ -182,38 +186,38 @@ EOF
 
 
 writeOwnerFilter() {
-    # $@ = unique owner names (sorted)
+    local owners=("SNOMED" "Implementation Support" "Telliant" "WCI")
 
     # CSS-only approach: radio inputs + labels (works inside sandbox="" iframes).
     echo "    <input type='radio' id='owner-filter-all' name='owner-filter' class='owner-filter-input' checked>"
-    echo "    <input type='radio' id='owner-filter-none' name='owner-filter' class='owner-filter-input'>"
-    for owner in "$@"; do
-        local safeId
-        safeId="owner-filter-$(echo "$owner" | tr -cd '[:alnum:]-_')"
-        echo "    <input type='radio' id='$safeId' name='owner-filter' class='owner-filter-input'>"
+    for owner in "${owners[@]}"; do
+        local slug
+        slug=$(ownerToSlug "$owner")
+        echo "    <input type='radio' id='owner-filter-$slug' name='owner-filter' class='owner-filter-input'>"
     done
+    echo "    <input type='radio' id='owner-filter-none' name='owner-filter' class='owner-filter-input'>"
 
     echo "    <style>"
-    echo "        #owner-filter-all:checked ~ .owner-filter label[for='owner-filter-all'],"
+    echo "        #owner-filter-all:checked ~ .owner-filter label[for='owner-filter-all'] { background: #1C6EA4; color: #ffffff; }"
     echo "        #owner-filter-none:checked ~ .owner-filter label[for='owner-filter-none'] { background: #1C6EA4; color: #ffffff; }"
     echo "        #owner-filter-none:checked ~ table.blueTable tr[data-owner] { display: none; }"
-    for owner in "$@"; do
-        local safeId
-        safeId="owner-filter-$(echo "$owner" | tr -cd '[:alnum:]-_')"
-        echo "        #${safeId}:checked ~ .owner-filter label[for='${safeId}'] { background: #1C6EA4; color: #ffffff; }"
-        echo "        #${safeId}:checked ~ table.blueTable tr[data-owner] { display: none; }"
-        echo "        #${safeId}:checked ~ table.blueTable tr[data-owner~='${owner}'] { display: table-row; }"
+    for owner in "${owners[@]}"; do
+        local slug
+        slug=$(ownerToSlug "$owner")
+        echo "        #owner-filter-$slug:checked ~ .owner-filter label[for='owner-filter-$slug'] { background: #1C6EA4; color: #ffffff; }"
+        echo "        #owner-filter-$slug:checked ~ table.blueTable tr[data-owner] { display: none; }"
+        echo "        #owner-filter-$slug:checked ~ table.blueTable tr[data-owner~='$slug'] { display: table-row; }"
     done
     echo "    </style>"
 
     echo "    <div class='owner-filter'>"
     echo "        <label for='owner-filter-all' class='pill'>All</label>"
-    echo "        <label for='owner-filter-none' class='pill'>None</label>"
-    for owner in "$@"; do
-        local safeId
-        safeId="owner-filter-$(echo "$owner" | tr -cd '[:alnum:]-_')"
-        echo "        <label for='$safeId' class='pill'>$owner</label>"
+    for owner in "${owners[@]}"; do
+        local slug
+        slug=$(ownerToSlug "$owner")
+        echo "        <label for='owner-filter-$slug' class='pill'>$owner</label>"
     done
+    echo "        <label for='owner-filter-none' class='pill'>None</label>"
     echo "    </div>"
 }
 
@@ -372,9 +376,17 @@ outCve() {
 
         tickets=$(findCveTickets "$lastCve")
 
-        local displayOwners="${lastOwners// /, }"
+        local displayOwners="${lastOwners//|/, }"
 
-        echo "            <tr data-owner='$lastOwners'>"
+        local dataOwner=""
+        IFS='|' read -ra ownerParts <<< "$lastOwners"
+        for o in "${ownerParts[@]}"; do
+            local slug
+            slug=$(ownerToSlug "$o")
+            dataOwner="${dataOwner:+$dataOwner }$slug"
+        done
+
+        echo "            <tr data-owner='$dataOwner'>"
         echo "                <td class='$scoreclass'>$lastScore</td>"
         echo "                <td><a href='$CVE_URL/$lastCve' target='_top'>$lastCve</a></td>"
         echo "                <td>$lastName</td>"
@@ -396,18 +408,9 @@ outCve() {
 }
 
 writeToHtml() {
-    # Pre-scan TSV to collect unique owners for filter pills
-    declare -A ownerSet
-    while IFS=$'\t' read -r _score _cve _module owner; do
-        if [[ -n "$owner" ]]; then
-            ownerSet["$owner"]=1
-        fi
-    done < "$CVE_TSV_FILE"
-    mapfile -t sortedOwners < <(printf '%s\n' "${!ownerSet[@]}" | sort)
-
     writeHtmlHeader
     writeSummary
-    writeOwnerFilter "${sortedOwners[@]}"
+    writeOwnerFilter
     writeHtmlTableHeader
 
     local lastScore="0.0"
@@ -432,9 +435,8 @@ writeToHtml() {
 
         if [[ "$lastCve" == "$cve" ]]; then
             moduleList="$moduleList,<br/><a href='$BUILD_URL/$module' target='_top'>$module</a>"
-            # Append owner only if not already in the space-separated list
-            if [[ " ${ownerList} " != *" ${owner} "* ]]; then
-                ownerList="${ownerList} ${owner}"
+            if [[ "|${ownerList}|" != *"|${owner}|"* ]]; then
+                ownerList="${ownerList}|${owner}"
             fi
         else
             outCve "$lastScore" "$lastCve" "$moduleList" "$ownerList"
