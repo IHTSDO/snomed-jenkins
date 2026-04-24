@@ -402,7 +402,7 @@ $SCRIPTS_PATH/640_EndToEndTest.sh"""
 
             if (jobType == JobTypes.e2eDev || jobType == JobTypes.e2eUat) {
                 credentialsBinding {
-                    usernamePassword('TEST_LOGIN_USR', 'TEST_LOGIN_PSW', getTestAccount(jobType, projectName))
+                    usernamePassword('TEST_LOGIN_USR', 'TEST_LOGIN_PSW', getAppPrefix(projectName.toLowerCase()) + "TEST" + getEnvSuffix(jobType))
                 }
             }
         }
@@ -524,24 +524,30 @@ String convertToEmails(String projectNotifiedUsers) {
     return result
 }
 
-String getTestAccount(JobTypes jobType, String projectName) {
-    String testAccount = ''
-
-    if (jobType == JobTypes.e2eDev) {
-        testAccount = 'TEST_DEV'
-    } else if (jobType == JobTypes.e2eUat) {
-        testAccount = 'TEST_UAT'
-    } else {
-        return testAccount
+String getAppPrefix(String projectName) {
+    switch (projectName) {
+        case "release-dashboard-ui":
+            return "RAD_"
+        case "reporting-ui":
+            return "RP_"
+        case "content-request-service-ui":
+            return "CRS_"
+        case "request-management-portal-ui":
+            return "RMP_"
+        default:
+            return ""
     }
+}
 
-    if (projectName.equalsIgnoreCase("release-dashboard-ui")) {
-        testAccount = 'RAD_' + testAccount
-    } else if (projectName.equalsIgnoreCase("reporting-ui")) {
-        testAccount = 'RP_' + testAccount
-    } else if (projectName.equalsIgnoreCase("content-request-service-ui")) {
-        testAccount = 'CRS_' + testAccount
+String getEnvSuffix(JobTypes jobType) {
+    switch (jobType) {
+        case JobTypes.e2eDev:
+            return "_DEV"
+        case JobTypes.e2eUat:
+            return "_UAT"
+        case JobTypes.e2eProd:
+            return "_PROD"
+        default:
+            return ""
     }
-
-    return testAccount
 }

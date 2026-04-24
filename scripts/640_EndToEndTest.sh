@@ -22,24 +22,21 @@ if [[ -d cypress ]]; then
             echo "    \"URL_BROWSER\": \"https://uat-browser.${SNOMED_TOOLS_URL}\","
             echo "    \"URL_AUTHORING\": \"https://uat-authoring.${SNOMED_TOOLS_URL}\","
 			echo "    \"URL_CRS\": \"https://uat-request.${SNOMED_TOOLS_URL}\","
+			echo "    \"URL_RMP\": \"https://uat-rmp.${SNOMED_TOOLS_URL}\","
             echo "    \"URL_REPORTING\": \"https://uat-snowstorm.${SNOMED_TOOLS_URL}/reporting/\","
             echo "    \"URL_RAD\": \"https://uat-release.${SNOMED_TOOLS_URL}/\","
             echo "    \"URL_SIMPLEX\": \"https://uat-simplex.${SNOMED_TOOLS_URL}/\""
 
         elif [[ ${JOB_NAME} =~ ^e2eprod.*$ ]]; then
             echo "    \"URL_LOGIN\": \"https://prod-ims.${SNOMED_TOOLS_URL}/#/login?serviceReferer=\","
-            echo "    \"URL_BROWSER\": \"https://prod-browser.${SNOMED_TOOLS_URL}\","
-            echo "    \"URL_AUTHORING\": \"https://prod-authoring.${SNOMED_TOOLS_URL}\","
-			echo "    \"URL_CRS\": \"https://prod-request.${SNOMED_TOOLS_URL}\","
-            echo "    \"URL_REPORTING\": \"https://prod-snowstorm.${SNOMED_TOOLS_URL}/reporting/\","
-            echo "    \"URL_RAD\": \"https://prod-release.${SNOMED_TOOLS_URL}/\","
-            echo "    \"URL_SIMPLEX\": \"https://prod-simplex.${SNOMED_TOOLS_URL}/\""
+            echo "    \"URL_BROWSER\": \"https://prod-browser.${SNOMED_TOOLS_URL}/\""
 
         else
             echo "    \"URL_LOGIN\": \"https://dev-ims.${SNOMED_TOOLS_URL}/#/login?serviceReferer=\","
             echo "    \"URL_BROWSER\": \"https://dev-browser.${SNOMED_TOOLS_URL}\","
             echo "    \"URL_AUTHORING\": \"https://dev-authoring.${SNOMED_TOOLS_URL}\","
 			echo "    \"URL_CRS\": \"https://dev-request.${SNOMED_TOOLS_URL}\","
+			echo "    \"URL_RMP\": \"https://dev-rmp.${SNOMED_TOOLS_URL}\","
             echo "    \"URL_REPORTING\": \"https://dev-snowstorm.${SNOMED_TOOLS_URL}/reporting/\","
             echo "    \"URL_RAD\": \"https://dev-release.${SNOMED_TOOLS_URL}/\","
             echo "    \"URL_SIMPLEX\": \"https://dev-simplex.${SNOMED_TOOLS_URL}/\""
