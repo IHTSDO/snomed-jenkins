@@ -242,7 +242,7 @@ void makeJobs(String projectName, def row) {
         generateFreestyle(JobTypes.e2eUat, projectGitUri, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
         PRJ_FILE.append("${FOLDER_E2E_UAT}/${projectName}\n")
 
-        if (projectName.equalsIgnoreCase("sct-browser-frontend")) {
+        if (projectName.equalsIgnoreCase("sct-browser-frontend") || projectName.equalsIgnoreCase("snomed-release-stats-ui")) {
             generateFreestyle(JobTypes.e2eProd, projectGitUri, projectName, description, projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
             PRJ_FILE.append("${FOLDER_E2E_PROD}/${projectName}\n")
         }
