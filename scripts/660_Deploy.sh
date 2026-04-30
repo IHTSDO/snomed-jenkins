@@ -37,12 +37,12 @@ performMavenDeployments() {
     fi
 
     if [[ $release_area != "NONE" ]]; then
-        if [[ $HOST =~ prod-jenkins* ]]; then
+        if [[ $HOST =~ prod-jenkins* ]] || [[ $HOST =~ dev-jenkins* && $release_area == "snapshots" ]]; then
             echo "Deploy to maven-${release_area}."
             mvn deploy -U -Dmaven.test.skip=true -Ddependency-check.skip=true \
                 -DaltDeploymentRepository=ihtsdo-public-nexus::default::https://nexus3.${SNOMED_TOOLS_URL}/repository/maven-${release_area}/
         else
-            echo "Can only deploy to nexus from prod-jenkins"
+            echo "Can only deploy to nexus from prod-jenkins (releases require prod-jenkins)"
         fi
 
         echo "Build the debian package debian-${release_area}."
@@ -65,7 +65,7 @@ performMavenDeployments() {
                 fi
                 echo "Check: https://nexus3.${SNOMED_TOOLS_URL}/#browse/browse:debian-${release_area}:packages%2F${deb_pkg_name:0:1}%2F${deb_pkg_name/\/*}"
 
-                if [[ $HOST =~ prod-jenkins* ]]; then
+                if [[ $HOST =~ prod-jenkins* ]] || [[ $HOST =~ dev-jenkins* && $release_area == "snapshots" ]]; then
                     status=$(curl -s -o /dev/null --write-out '%{http_code}\n' -u "$NEXUS_LOGIN_USR:$NEXUS_LOGIN_PSW" -X POST -H "Content-Type: multipart/form-data" --data-binary "@${deb_pkg}" "https://nexus3.${SNOMED_TOOLS_URL}/repository/debian-${release_area}/")
                     echo "Curl return status=${status}"
                     figlet -w 500 "${status}"
@@ -86,7 +86,7 @@ performMavenDeployments() {
                         echo "Upload successful"
                     fi
                 else
-                    echo "Can only deploy to nexus from prod-jenkins"
+                    echo "Can only deploy to nexus from prod-jenkins (releases require prod-jenkins)"
                 fi
             done<<<"$(find . -type f -name "*.deb" -print)"
         else
