@@ -33,6 +33,7 @@ COLUMN_USES_BOM = "Uses BOM?"
 COLUMN_SNOMED_DEPENDENCIES = "Snomed Dependencies"
 COLUMN_OWNER = "Owner"
 COLUMN_NOTES = "Notes"
+COLUMN_GIT_ORG = "Git Org"
 
 FOLDER_JOBS='jobs'
 FOLDER_CVE='cve'
@@ -203,8 +204,9 @@ void makeJobs(String projectName, def row) {
     String projectDependencies = row."${COLUMN_SNOMED_DEPENDENCIES}"
     String projectOwner = row."${COLUMN_OWNER}"
     String projectNotes = row."${COLUMN_NOTES}"
-    String projectSrcUrl = new String("https://github.com/IHTSDO/${projectName}")
-    String projectGitUri = new String("git@github.com:IHTSDO/${projectName}.git")
+    String projectGitOrg = row."${COLUMN_GIT_ORG}"?.trim() ?: "IHTSDO"
+    String projectSrcUrl = new String("https://github.com/${projectGitOrg}/${projectName}")
+    String projectGitUri = new String("git@github.com:${projectGitOrg}/${projectName}.git")
     String projectNexusUrl = new String("https://nexus3.${SNOMED_TOOLS_URL}/#browse/browse:debian-snapshots:packages%2Fs%2F${projectGroupArtifact}")
     String cveTableUrl = "/userContent/cveTable.html"
     // This needs to be constant so cannot be a UUID!
@@ -231,19 +233,19 @@ void makeJobs(String projectName, def row) {
     if (!projectLanguage.toLowerCase().startsWith("jdk") || projectType.equalsIgnoreCase("bom")) {
         println "    SKIPPING: cve job for ${projectName} [ ${projectPipeLineType} ]"
     } else {
-        generateFreestyle(JobTypes.cve, projectGitUri, projectName,  description, projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
+        generateFreestyle(JobTypes.cve, projectGitUri, projectGitOrg, projectName,  description, projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
         PRJ_FILE.append("${FOLDER_CVE}/${projectName}\n")
     }
 
     // Setup E2E jobs.
     if (projectLanguage.equalsIgnoreCase("javascript") || projectLanguage.equalsIgnoreCase("typescript")) {
-        generateFreestyle(JobTypes.e2eDev, projectGitUri, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
+        generateFreestyle(JobTypes.e2eDev, projectGitUri, projectGitOrg, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
         PRJ_FILE.append("${FOLDER_E2E}/${projectName}\n")
-        generateFreestyle(JobTypes.e2eUat, projectGitUri, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
+        generateFreestyle(JobTypes.e2eUat, projectGitUri, projectGitOrg, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
         PRJ_FILE.append("${FOLDER_E2E_UAT}/${projectName}\n")
 
         if (projectName.equalsIgnoreCase("sct-browser-frontend") || projectName.equalsIgnoreCase("snomed-release-stats-ui")) {
-            generateFreestyle(JobTypes.e2eProd, projectGitUri, projectName, description, projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
+            generateFreestyle(JobTypes.e2eProd, projectGitUri, projectGitOrg, projectName, description, projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
             PRJ_FILE.append("${FOLDER_E2E_PROD}/${projectName}\n")
         }
     } else {
@@ -309,7 +311,7 @@ String generatePipeline(String folder, String suffix, String includeBranches, St
     }
 }
 
-String generateFreestyle(JobTypes jobType, String projectGitUri, String projectName, String desc, String projectBuildTool, String projectLanguage, String projectSlackChannel, String projectNotifiedUsers) {
+String generateFreestyle(JobTypes jobType, String projectGitUri, String projectGitOrg, String projectName, String desc, String projectBuildTool, String projectLanguage, String projectSlackChannel, String projectNotifiedUsers) {
     String includeBranches
     String folder
     String suffix
@@ -376,7 +378,7 @@ $SCRIPTS_PATH/640_EndToEndTest.sh"""
         scm {
             git {
                 remote {
-                    github("IHTSDO/${projectName}", 'ssh')
+                    github("${projectGitOrg}/${projectName}", 'ssh')
                     credentials(GIT_HUB_CREDENTIALS_ID)
                 }
                 branches(includeBranches.split(','))
