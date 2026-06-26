@@ -31,7 +31,7 @@ EOF
                     -Dsonar.host.url="${SONAR_URL}" \
                     -Dsonar.token="${SONAR_TOKEN}" \
                     -Dsonar.projectName="${SNOMED_PROJECT_NAME,,}" \
-                    sonar:sonar -Dsonar.qualitygate.wait=true
+                    org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.qualitygate.wait=true
                 ;;
             gradle)
                 # https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-gradle/
