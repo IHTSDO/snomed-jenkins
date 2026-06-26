@@ -238,7 +238,7 @@ void makeJobs(String projectName, def row) {
     }
 
     // Setup E2E jobs.
-    if (projectLanguage.equalsIgnoreCase("javascript") || projectLanguage.equalsIgnoreCase("typescript")) {
+    if (projectLanguage.equalsIgnoreCase("javascript") || projectLanguage.equalsIgnoreCase("typescript") || projectLanguage.equalsIgnoreCase("embedded")) {
         generateFreestyle(JobTypes.e2eDev, projectGitUri, projectGitOrg, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)
         PRJ_FILE.append("${FOLDER_E2E}/${projectName}\n")
         generateFreestyle(JobTypes.e2eUat, projectGitUri, projectGitOrg, projectName, description,  projectBuildTool, projectLanguage, projectSlackChannel, projectNotifiedUsers)

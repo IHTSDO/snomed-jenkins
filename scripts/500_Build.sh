@@ -7,6 +7,18 @@ case $SNOMED_PROJECT_LANGUAGE in
         npm install
         ng build
         ;;
+    Embedded)
+        SNOMED_UI_REF=$(python3 -c "import xml.etree.ElementTree as ET; print(ET.parse('pom.xml').getroot().find('./properties/snomed-ui.version').text)")
+        APP_DIR=$(pwd)
+        git clone --branch "$SNOMED_UI_REF" --depth 1 \
+            git@github.com:IHTSDO/snomed-ui.git _snomed_ui_workspace
+        ln -s "$APP_DIR" _snomed_ui_workspace/projects/$SNOMED_PROJECT_NAME
+        cd _snomed_ui_workspace
+        mvn -U clean package -DskipTests -Ddependency-check.skip=true
+        npm install
+        npm run build:lib
+        npm run build:$SNOMED_PROJECT_NAME
+        ;;
     Javascript)
         gem list -i sass || gem install sass
         mvn -U clean package -DskipTests -Ddependency-check.skip=true

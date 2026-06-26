@@ -5,7 +5,7 @@ figlet -w 500 "CVE/Security Checks"
 set -e
 
 case ${SNOMED_PROJECT_LANGUAGE,,} in
-    cypress | typescript | javascript)
+    cypress | typescript | javascript | embedded)
         echo "No security tool required."
         ;;
     *)
