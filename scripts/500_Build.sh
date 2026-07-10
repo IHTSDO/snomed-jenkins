@@ -13,6 +13,12 @@ case $SNOMED_PROJECT_LANGUAGE in
         git clone --branch "$SNOMED_UI_REF" --depth 1 \
             git@github.com:IHTSDO/snomed-ui.git _snomed_ui_workspace
         ln -s "$APP_DIR" _snomed_ui_workspace/projects/$SNOMED_PROJECT_NAME
+        APP_BUILD_ID=$(python3 -c "import json; print(json.load(open('build-id.json')).get('buildId','NOT FOUND'))")
+        SNOMED_UI_BUILD_ID=$(python3 -c "import json; print(json.load(open('_snomed_ui_workspace/build-id.json')).get('buildId','NOT FOUND'))")
+        echo "============================================"
+        echo "snomed-ui: $SNOMED_UI_BUILD_ID"
+        echo "$SNOMED_PROJECT_NAME: $APP_BUILD_ID"
+        echo "============================================"
         cd _snomed_ui_workspace
         mvn -U clean package -DskipTests -Ddependency-check.skip=true
         npm install
