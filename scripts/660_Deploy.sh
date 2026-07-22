@@ -26,7 +26,7 @@ performMavenDeployments() {
     echo "Uploading debian package to Nexus"
     local release_area="NONE"
 
-    if [[ $GIT_BRANCH == "master" ]] || [[ $GIT_BRANCH == "main" ]] || [[ $GIT_BRANCH == "release-candidate" ]]; then
+    if [[ $GIT_BRANCH == "master" ]] || [[ $GIT_BRANCH == "main" ]] || [[ $GIT_BRANCH == "release-candidate" ]] || [[ $GIT_BRANCH =~ ^release/ ]]; then
         release_area="releases"
     elif [[ $GIT_BRANCH == "develop" ]] || [[ $GIT_BRANCH =~ nexus$ ]]; then
         release_area="snapshots"
