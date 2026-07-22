@@ -47,6 +47,7 @@ pipeline {
                     branch 'develop'
                     branch 'release-candidate'
                     branch pattern: ".*nexus\$", comparator: "REGEXP"
+                    branch pattern: "^release/.*", comparator: "REGEXP"
                 }
             }
             steps {
@@ -89,6 +90,7 @@ pipeline {
                     branch 'develop'
                     branch 'release-candidate'
                     branch pattern: ".*nexus\$", comparator: "REGEXP"
+                    branch pattern: "^release/.*", comparator: "REGEXP"
                 }
             }
             steps { sh "../_PipelineCreationJob_/scripts/620_Performance.sh" }
@@ -101,6 +103,7 @@ pipeline {
                     branch 'develop'
                     branch 'release-candidate'
                     branch pattern: ".*nexus\$", comparator: "REGEXP"
+                    branch pattern: "^release/.*", comparator: "REGEXP"
                 }
             }
             steps { sh "../_PipelineCreationJob_/scripts/630_Quality.sh" }
@@ -129,6 +132,7 @@ pipeline {
                     branch 'develop'
                     branch 'release-candidate'
                     branch pattern: ".*nexus\$", comparator: "REGEXP"
+                    branch pattern: "^release/.*", comparator: "REGEXP"
                 }
             }
             steps { sh "../_PipelineCreationJob_/scripts/660_Deploy.sh" }
