@@ -5,7 +5,6 @@ LOC=$JENKINS_HOME/userContent
 CVE_TSV_FILE=$LOC/cveTable.tsv
 COMPONENT_CACHE=/tmp/jira_components_cache.tsv
 CVE_URL=https://ossindex.sonatype.org/vulnerability
-PROJECT=PIP
 
 # Jira
 URL_BASE=https://snomed.atlassian.net
@@ -14,6 +13,22 @@ SEARCH_URL=$URL_BASE/rest/api/3/search/jql
 
 echo "SNOMED_TOOLS_URL = $SNOMED_TOOLS_URL"
 declare -A componentMap
+
+nameToProject() {
+    local name="${1,,}"
+    local owner="${2,,}"
+    case "$owner" in
+        telliant)
+            case "$name" in
+                cis*)  echo "CIS"  ;;
+                mlds*) echo "MLDS" ;;
+                *)     echo "PIP"  ;;
+            esac
+            ;;
+        isto) echo "ISTO" ;;
+        *)    echo "PIP"  ;;
+    esac
+}
 
 # API Documentation: https://docs.atlassian.com/software/jira/docs/api/REST/8.20.8/#project-getProjectComponents
 getListAllComponents() {
@@ -28,7 +43,7 @@ getListAllComponents() {
     local response=$(curl -s -u "$JIRA_API_KEY" \
         -H "Accept: application/json" \
         -H "Content-Type: application/json" \
-        -X GET "${URL_BASE}/rest/api/3/project/${PROJECT}/components")
+        -X GET "${URL_BASE}/rest/api/3/project/PIP/components")
 
     echo "$response" | jq -r '.[] | [.id, .name] | @tsv' > "${COMPONENT_CACHE}"
 }
@@ -44,16 +59,19 @@ loadComponentsIntoMap() {
 # API Documentation: https://docs.atlassian.com/software/jira/docs/api/REST/8.20.8/#search
 findCveTicket() {
     local cve=$1
-    local jql="project = ${PROJECT} and labels = cve and summary ~ ${cve}"
-    local jsonData=$(jq -n --arg jql "$jql" '{ jql: $jql }')
-    local json=$(curl -s -u "$JIRA_API_KEY" \
+    local project=$2
+    local jql jsonData json num
+
+    jql="project = ${project} and labels = cve and summary ~ ${cve}"
+    jsonData=$(jq -n --arg jql "$jql" '{ jql: $jql }')
+    json=$(curl -s -u "$JIRA_API_KEY" \
          -H "Accept: application/json" \
          -H "Content-Type: application/json" \
          -X POST \
          --data "$jsonData" \
          "$SEARCH_URL")
+    num=$(echo "$json" | jq '.issues | length')
 
-    local num=$(echo "$json" | jq '.issues | length')
     echo "$num"
 }
 
@@ -80,6 +98,7 @@ createNewTicket() {
     local score=$1
     local cve=$2
     local list=$3
+    local project=$4
     local summary="CVE: Address ${cve} (${score})"
 
     local bigger95 bigger80
@@ -99,7 +118,7 @@ createNewTicket() {
 
     local jsonData
     jsonData=$(jq -n \
-        --arg project "$PROJECT" \
+        --arg project "$project" \
         --arg summary "$summary" \
         --arg issueType "Improvement" \
         --arg priority "$priority" \
@@ -140,18 +159,20 @@ createNewTicket() {
             echo "WARNING: Jira tickets can only be created from Jenkins"
         fi
 }
+
 checkAndCreate() {
     local score=$1
     local cve=$2
     local list=$3
+    local project=$4
     local num
-    num=$(findCveTicket "$cve")
+    num=$(findCveTicket "$cve" "$project")
 
     if ((num > 0)); then
-        echo "    Found existing ticket, not creating new one for ${cve} (${score}) (Number of existing tickets = $num): $list"
+        echo "    Found existing ticket, not creating new one for ${cve} (${score}) in ${project} (Number of existing tickets = $num): $list"
     else
-        echo "    Found no existing tickets, creating new one for ${cve} (${score}): $list)"
-        id=$(createNewTicket "${score}" "${cve}" "${list}")
+        echo "    Found no existing tickets, creating new one for ${cve} (${score}) in ${project}: $list)"
+        id=$(createNewTicket "${score}" "${cve}" "${list}" "${project}")
         echo "    Created ticket ${id}"
     fi
 }
@@ -161,34 +182,27 @@ loadComponentsIntoMap
 
 echo "Checking for new CVE tickets to create using $CVE_TSV_FILE"
 HOST=$(hostname)
-lastScore="0.0"
-lastCve=""
-list=""
-first=true
 
-# Read each line of the TSV (Tab Separated Values) file.
-# This file is sorted so each line is a separate library but CVE's are grouped together.
-while IFS=$'\t' read -r score cve name _owner; do
-    if $first; then
-        lastScore="$score"
-        lastCve="$cve"
-        list="$name"
-        first=false
-        continue
+declare -A ticketScores   # "cve|project" -> highest score
+declare -A ticketNames    # "cve|project" -> comma-separated component list
+
+while IFS=$'\t' read -r score cve name owner; do
+    project=$(nameToProject "$name" "$owner")
+    key="${cve}|${project}"
+
+    if [[ -z "${ticketNames[$key]+x}" ]]; then
+        ticketScores[$key]="$score"
+        ticketNames[$key]="$name"
+    else
+        ticketNames[$key]="${ticketNames[$key]},$name"
+        higher=$(echo "$score > ${ticketScores[$key]}" | bc)
+        if (( higher > 0 )); then
+            ticketScores[$key]="$score"
+        fi
     fi
-
-    if [[ $lastCve == "$cve" ]]; then
-        list="$list,$name"
-        continue
-    fi
-
-    checkAndCreate "$lastScore" "$lastCve" "$list"
-
-    lastScore="$score"
-    lastCve="$cve"
-    list="$name"
 done < "$CVE_TSV_FILE"
 
-if [[ $lastCve != "" ]]; then
-    checkAndCreate "$lastScore" "$lastCve" "$list"
-fi
+for key in "${!ticketNames[@]}"; do
+    IFS='|' read -r cve project <<< "$key"
+    checkAndCreate "${ticketScores[$key]}" "$cve" "${ticketNames[$key]}" "$project"
+done
