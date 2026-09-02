@@ -95,6 +95,74 @@ performMavenDeployments() {
     fi
 }
 
+performGradleDeployments() {
+    local release_area="NONE"
+
+    if [[ $GIT_BRANCH == "master" ]] || [[ $GIT_BRANCH == "main" ]] || [[ $GIT_BRANCH == "release-candidate" ]]; then
+        release_area="releases"
+    elif [[ $GIT_BRANCH == "develop" ]] || [[ $GIT_BRANCH =~ nexus$ ]]; then
+        release_area="snapshots"
+    else
+        echo "NOT uploading to Nexus:"
+        echo "    'main/master' branch is uploaded to Nexus in 'maven-releases'"
+        echo "    'develop' and branches ending in 'nexus' are uploaded to Nexus in 'maven-snapshots'"
+    fi
+
+    if [[ $release_area != "NONE" ]]; then
+        if [[ $HOST =~ prod-jenkins* ]]; then
+            echo "Deploy JAR to maven-${release_area}."
+            ./gradlew publish \
+                -PnexusUrl="https://nexus3.${SNOMED_TOOLS_URL}/repository/maven-${release_area}/" \
+                -PnexusUsername="$NEXUS_LOGIN_USR" \
+                -PnexusPassword="$NEXUS_LOGIN_PSW"
+        else
+            echo "Can only deploy to nexus from prod-jenkins"
+        fi
+
+        deb_pkg_count=$(find . -type f -name "*.deb" -print | wc -l)
+
+        if ((deb_pkg_count > 0)); then
+            echo "${deb_pkg_count} deployable package(s) exist"
+
+            while read -r deb_pkg
+            do
+                echo "File to upload is: ${deb_pkg}"
+                deb_pkg_name=${deb_pkg/.\/}
+                if [[ $deb_pkg_name =~ ^build ]]; then
+                    deb_pkg_name=$SNOMED_PROJECT_NAME
+                fi
+                echo "Check: https://nexus3.${SNOMED_TOOLS_URL}/#browse/browse:debian-${release_area}:packages%2F${deb_pkg_name:0:1}%2F${deb_pkg_name/\/*}"
+
+                if [[ $HOST =~ prod-jenkins* ]]; then
+                    status=$(curl -s -o /dev/null --write-out '%{http_code}\n' -u "$NEXUS_LOGIN_USR:$NEXUS_LOGIN_PSW" -X POST -H "Content-Type: multipart/form-data" --data-binary "@${deb_pkg}" "https://nexus3.${SNOMED_TOOLS_URL}/repository/debian-${release_area}/")
+                    echo "Curl return status=${status}"
+                    figlet -w 500 "${status}"
+
+                    case $status in
+                        200) echo "200 - OK." ;;
+                        201) echo "201 - Upload was successful." ;;
+                        400) echo "400 - Is the build version already deployed on Nexus, increment the project version?" ;;
+                        401) echo "401 - Unauthorised, username and/or password is incorrect." ;;
+                        403) echo "403 - Forbidden, no access rights to the content." ;;
+                        404) echo "404 - Not found, wrong upload location?" ;;
+                        *) echo "${status} - Some other status, see: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status" ;;
+                    esac
+
+                    if ((status > 299)); then
+                        exit 1
+                    else
+                        echo "Upload successful"
+                    fi
+                else
+                    echo "Can only deploy to nexus from prod-jenkins"
+                fi
+            done<<<"$(find . -type f -name "*.deb" -print)"
+        else
+            echo "No debian package to upload"
+        fi
+    fi
+}
+
 echo "--------------------------------------"
 
 if [[ $SNOMED_PROJECT_DEPLOY_ENABLED == TRUE ]]; then
@@ -109,7 +177,7 @@ if [[ $SNOMED_PROJECT_DEPLOY_ENABLED == TRUE ]]; then
                     deployToDockerHub
                     ;;
                 gradle)
-                    ./gradlew uploadArchives
+                    performGradleDeployments
                     ;;
                 none)
                     echo "No deploy tool required."
