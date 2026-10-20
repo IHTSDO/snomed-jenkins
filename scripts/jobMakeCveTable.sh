@@ -186,7 +186,7 @@ EOF
 
 
 writeOwnerFilter() {
-    local owners=("SNOMED" "Implementation Support" "Telliant" "WCI")
+    local owners=("SNOMED" "Implementation Support" "Telliant" "WCI" "AI Tools")
 
     # CSS-only approach: radio inputs + labels (works inside sandbox="" iframes).
     echo "    <input type='radio' id='owner-filter-all' name='owner-filter' class='owner-filter-input' checked>"
