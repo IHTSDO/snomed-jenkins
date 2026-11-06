@@ -68,11 +68,13 @@ if (onProd) {
     HOOK_FILE.write("")
     NIGHTLY_TRIGGER_CVE = "H 5 * * 1-5"
     NIGHTLY_TRIGGER_E2E = "H H(6-8) * * 1-5"
+	WEEKLY_TRIGGER_E2E = "H H(6-8) * * 5"
     MANUAL_TRIGGER_E2E = ""
 } else {
     println "NOT on production"
     NIGHTLY_TRIGGER_CVE = ""
     NIGHTLY_TRIGGER_E2E = ""
+	WEEKLY_TRIGGER_E2E = ""
     MANUAL_TRIGGER_E2E = ""
 }
 
@@ -335,7 +337,7 @@ $SCRIPTS_PATH/600_Security.sh"""
             includeBranches = "develop"
             folder = FOLDER_E2E
             suffix = "_E2E"
-            cronExpression = NIGHTLY_TRIGGER_E2E
+            cronExpression = WEEKLY_TRIGGER_E2E
             slackSubject = "E2E testing Dev"
             commandStr = """$SCRIPTS_PATH/010_Initialize.sh
 $SCRIPTS_PATH/020_SanityCheck.sh
